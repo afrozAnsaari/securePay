@@ -48,7 +48,7 @@ router = APIRouter(tags=["Payments"])
             "description": ("Idempotency conflict or payment already processing"),
         },
         500: {
-            "description": "Payment associated with the idempotency key was not found."
+            "description": "Payment associated with the idempotency key was not found.",
         },
     },
 )
