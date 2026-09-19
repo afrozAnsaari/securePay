@@ -22,7 +22,12 @@ from src.auth.jwt import create_access_token
 router = APIRouter(tags=["Auth"])
 
 
-@router.post("/login")
+@router.post(
+    "/login",
+    responses={
+        401: {"description": "Incorrect mobile number or password"},
+    },
+)
 def login(
     credentials: LoginRequest,
     db: Session = Depends(get_db),
