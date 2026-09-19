@@ -17,6 +17,10 @@ from src.databases.models import (
     Payment,
 )
 
+from src.services.rate_limit_service import check_rate_limit
+
+from src.config.rate_limits import RATE_LIMITS
+
 from src.databases.payment_idempotency import PaymentIdempotency
 
 from src.schemas.payment import (
@@ -45,10 +49,16 @@ router = APIRouter(tags=["Payments"])
             "description": "Invalid Idempotency-Key",
         },
         409: {
-            "description": ("Idempotency conflict or payment already processing"),
+            "description": "Idempotency conflict or payment already processing",
+        },
+        429: {
+            "description": "Too many payment requests",
         },
         500: {
             "description": "Payment associated with the idempotency key was not found.",
+        },
+        503: {
+            "description": "Rate limiting service temporarily unavailable.",
         },
     },
 )
@@ -83,7 +93,27 @@ def make_payment(
         )
 
     # =========================================================
-    # 2. Generate Request Fingerprint
+    # 2. RATE LIMIT
+    #
+    # Redis is used as the rate-limit state store.
+    #
+    # Each authenticated user gets their own payment bucket.
+    #
+    # Example:
+    #
+    # ratelimit:user:1:payment
+    # ratelimit:user:2:payment
+    #
+    # =========================================================
+
+    check_rate_limit(
+        key=f"user:{current_user.id}:payment",
+        limit=RATE_LIMITS["payment"]["limit"],
+        window=RATE_LIMITS["payment"]["window"],
+    )
+
+    # =========================================================
+    # 3. Generate Request Fingerprint
     # =========================================================
 
     fingerprint = generate_request_fingerprint(
@@ -93,7 +123,7 @@ def make_payment(
     )
 
     # =========================================================
-    # 3. CHECK REDIS CACHE
+    # 4. CHECK REDIS IDEMPOTENCY CACHE
     # =========================================================
 
     cached_record = get_idempotency_record(
@@ -102,7 +132,7 @@ def make_payment(
     )
 
     # =========================================================
-    # 4. REDIS CACHE HIT
+    # 5. REDIS CACHE HIT
     # =========================================================
 
     if cached_record is not None:
@@ -126,11 +156,11 @@ def make_payment(
         return cached_record["response"]
 
     # =========================================================
-    # 5. REDIS MISS
+    # 6. REDIS MISS
     #
     # Redis does NOT know whether this is a new payment.
     #
-    # Now PostgreSQL becomes the authority.
+    # PostgreSQL is the durable authority.
     # =========================================================
 
     existing_record = (
@@ -143,7 +173,7 @@ def make_payment(
     )
 
     # =========================================================
-    # 6. EXISTING POSTGRESQL IDEMPOTENCY RECORD
+    # 7. EXISTING POSTGRESQL IDEMPOTENCY RECORD
     # =========================================================
 
     if existing_record is not None:
@@ -195,11 +225,11 @@ def make_payment(
             # -------------------------------------------------
             # Re-populate Redis cache.
             #
-            # This handles:
+            # Handles:
             #
-            # Redis expiry
-            # Redis restart
-            # Redis flush
+            # - Redis expiry
+            # - Redis restart
+            # - Redis flush
             # -------------------------------------------------
 
             store_idempotency_result(
@@ -220,12 +250,13 @@ def make_payment(
         raise HTTPException(
             status_code=409,
             detail=(
-                "This payment request is already being processed. Please retry shortly."
+                "This payment request is already being processed. "
+                "Please retry shortly."
             ),
         )
 
     # =========================================================
-    # 7. CREATE NEW POSTGRESQL IDEMPOTENCY RECORD
+    # 8. CREATE NEW POSTGRESQL IDEMPOTENCY RECORD
     # =========================================================
 
     idempotency_record = PaymentIdempotency(
@@ -239,7 +270,7 @@ def make_payment(
     db.add(idempotency_record)
 
     # =========================================================
-    # 8. TRY TO WIN THE RACE
+    # 9. TRY TO WIN THE IDEMPOTENCY RACE
     #
     # PostgreSQL UNIQUE constraint:
     #
@@ -261,6 +292,15 @@ def make_payment(
         # =====================================================
 
         db.rollback()
+
+        constraint_name = getattr(
+            getattr(e.orig, "diag", None),
+            "constraint_name",
+            None,
+        )
+
+        if constraint_name != "uq_payment_idempotency_user_key":
+            raise
 
         print("IDEMPOTENCY FAILURE")
         print(e)
@@ -351,7 +391,7 @@ def make_payment(
         )
 
     # =========================================================
-    # 9. WE WON THE RACE
+    # 10. WE WON THE IDEMPOTENCY RACE
     #
     # This request owns this idempotency key.
     # =========================================================
@@ -359,7 +399,7 @@ def make_payment(
     try:
 
         # =====================================================
-        # 10. Process Payment
+        # 11. Process Payment
         #
         # No commit happens inside this function.
         # =====================================================
@@ -371,7 +411,7 @@ def make_payment(
         )
 
         # =====================================================
-        # 11. Link Idempotency → Payment
+        # 12. Link Idempotency → Payment
         # =====================================================
 
         idempotency_record.payment_id = saved_payment.id
@@ -379,7 +419,7 @@ def make_payment(
         idempotency_record.status = "COMPLETED"
 
         # =====================================================
-        # 12. ATOMIC DATABASE COMMIT
+        # 13. ATOMIC DATABASE COMMIT
         #
         # These all commit together:
         #
@@ -394,13 +434,13 @@ def make_payment(
         db.commit()
 
         # =====================================================
-        # 13. Refresh Payment
+        # 14. Refresh Payment
         # =====================================================
 
         db.refresh(saved_payment)
 
         # =====================================================
-        # 14. Build Response
+        # 15. Build Response
         # =====================================================
 
         response = {
@@ -414,7 +454,7 @@ def make_payment(
         }
 
         # =====================================================
-        # 15. CACHE SUCCESSFUL RESULT IN REDIS
+        # 16. CACHE SUCCESSFUL RESULT IN REDIS
         #
         # This happens AFTER DB COMMIT.
         #
@@ -430,7 +470,7 @@ def make_payment(
         )
 
         # =====================================================
-        # 16. Return Result
+        # 17. Return Result
         # =====================================================
 
         return response
