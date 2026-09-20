@@ -17,8 +17,8 @@ class TransactionResponse(BaseModel):
 
     direction: str
 
-    risk_score: float | None = None
-    fraud_decision: str | None = None
+    # risk_score: float | None = None
+    # fraud_decision: str | None = None
 
     created_at: datetime
 
