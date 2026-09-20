@@ -1,14 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from datetime import datetime, timezone
 
-from fastapi import Depends
-
 from sqlalchemy.orm import Session
 
-
 from src.databases.refresh_token import RefreshToken
-
 from src.databases.database import get_db
 
 from src.schemas.refresh_token import RefreshTokenRequest
@@ -16,6 +12,10 @@ from src.schemas.refresh_token import RefreshTokenRequest
 from src.auth.jwt import create_access_token
 
 from src.security.hash_utils import sha256_hash
+
+from src.services.rate_limit_service import check_rate_limit
+
+from src.config.rate_limits import RATE_LIMITS
 
 router = APIRouter(tags=["Refresh"])
 
@@ -49,6 +49,12 @@ def refresh_access_token(
             status_code=401,
             detail="Invalid refresh token.",
         )
+
+    check_rate_limit(
+        key=f"refresh:user:{stored_token.user_id}",
+        limit=RATE_LIMITS["refresh"]["limit"],
+        window=RATE_LIMITS["refresh"]["window"],
+    )
 
     now = datetime.now(timezone.utc)
 

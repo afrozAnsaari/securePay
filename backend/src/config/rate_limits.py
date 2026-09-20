@@ -24,4 +24,9 @@ RATE_LIMITS = {
         "limit": 60,
         "window": 60,
     },
+    "lba": {
+        # Changed temporarily for testing 30->5
+        "limit": 5,
+        "window": 60,
+    },
 }

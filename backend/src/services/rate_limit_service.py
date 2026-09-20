@@ -4,14 +4,7 @@ import uuid
 import redis
 from fastapi import HTTPException
 
-REDIS_URL = "redis://localhost:6379/0"
-
-
-redis_client = redis.Redis.from_url(
-    REDIS_URL,
-    decode_responses=True,
-)
-
+from src.databases.redis import redis_client
 
 RATE_LIMIT_SCRIPT = """
 local key = KEYS[1]
@@ -49,31 +42,7 @@ return {1, 0}
 """
 
 
-def check_rate_limit(
-    key: str,
-    limit: int,
-    window: int,
-) -> None:
-    """
-    Apply a Redis-backed sliding-window rate limit.
-
-    Args:
-        key:
-            Unique identifier for this rate-limit bucket.
-
-        limit:
-            Maximum number of requests allowed.
-
-        window:
-            Time window in seconds.
-
-    Raises:
-        HTTPException 429:
-            Rate limit exceeded.
-
-        HTTPException 503:
-            Redis unavailable.
-    """
+def check_rate_limit(key: str, limit: int, window: int) -> None:
 
     if limit <= 0:
         raise ValueError("Rate limit must be greater than zero.")
@@ -102,10 +71,10 @@ def check_rate_limit(
     except redis.RedisError:
         raise HTTPException(
             status_code=503,
-            detail="Service temporarily unavailable. Please try again later",
+            detail="Rate limiting service temporarily unavailable.",
         )
 
-    allowed = result[0]
+    allowed = int(result[0])
     retry_after = int(result[1])
 
     if allowed == 0:

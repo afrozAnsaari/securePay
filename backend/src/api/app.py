@@ -22,10 +22,12 @@ from src.api.routes.upi.logout import router as logout_router
 from src.api.routes.upi.accounts import router as get_all_user_linked_accounts
 from src.api.routes.upi.profiles import router as UPI_Route
 from src.api.routes.upi.fetch_accounts import router as discover_accounts
-from src.api.routes.upi.link_bank import router as link_bank_router
+from src.api.routes.upi.link_bank_account import router as link_bank_router
 from src.api.routes.upi.check_upi_profile import router as check_upi_account
 from src.api.routes.upi.payments import router as make_payments_router
+from src.api.routes.upi.transactions import router as transaction_history_router
 from src.api.routes.upi.refresh_token import router as refresh_token_auth
+
 
 from src.services.fraud.predictor import predict_fraud
 
@@ -46,6 +48,7 @@ app.include_router(card_issuance_router)
 app.include_router(bank_account_router)
 app.include_router(customer_router)
 app.include_router(make_payments_router)
+app.include_router(transaction_history_router)
 app.include_router(users.router)
 app.include_router(accounts.router)
 

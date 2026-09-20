@@ -2,7 +2,11 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Request,
 )
+
+from src.services.rate_limit_service import check_rate_limit
+from src.config.rate_limits import RATE_LIMITS
 
 
 from src.services.token_service import create_user_refresh_token
@@ -30,8 +34,17 @@ router = APIRouter(tags=["Auth"])
 )
 def login(
     credentials: LoginRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
+
+    client_ip = request.client.host if request.client else "unknown"
+
+    check_rate_limit(
+        key=f"login:ip:{client_ip}",
+        limit=RATE_LIMITS["login"]["limit"],
+        window=RATE_LIMITS["login"]["window"],
+    )
 
     user = db.query(User).filter(User.mobile_no == credentials.mobile_no).first()
 
