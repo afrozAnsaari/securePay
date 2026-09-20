@@ -278,7 +278,5 @@ def get_transaction(
         sender_account_id=payment.sender_account_id,
         receiver_account_id=payment.receiver_account_id,
         direction=direction,
-        risk_score=payment.risk_score,
-        fraud_decision=payment.fraud_decision,
         created_at=payment.created_at,
     )
