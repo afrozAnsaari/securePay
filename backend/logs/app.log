@@ -1,0 +1,9 @@
+2026-09-21 12:38:55,097 | INFO |src.api.app | SecurePay logging system initialized
+2026-09-21 12:39:11,397 | INFO |src.api.app | SecurePay logging system initialized
+2026-09-21 16:27:02,111 | INFO |src.api.app | SecurePay logging system initialized
+2026-09-21 19:56:40,009 | INFO |src.api.app | SecurePay logging system initialized
+2026-09-21 19:57:22,091 | INFO |src.api.routes.upi.audit | Testing audit logging user_id=1
+2026-09-21 20:11:27,701 | INFO |src.api.app | SecurePay logging system initialized
+2026-09-21 20:12:14,635 | INFO |src.api.routes.upi.audit | Testing audit logging user_id=1
+2026-09-21 20:26:07,294 | INFO |src.api.app | SecurePay logging system initialized
+2026-09-21 20:32:57,623 | INFO |src.api.routes.upi.audit | Audit rollback test completed user_id=1

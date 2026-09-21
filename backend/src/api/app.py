@@ -13,6 +13,8 @@ from src.api.routes import (
 
 from src.api.routes import accounts
 
+from src.api.routes.upi.audit import router as test_audit_log
+
 from src.api.routes.bank.customers import router as customer_router
 from src.api.routes.bank.accounts import router as bank_account_router
 from src.api.routes.bank.card_issuance import router as card_issuance_router
@@ -31,11 +33,23 @@ from src.api.routes.upi.refresh_token import router as refresh_token_auth
 
 from src.services.fraud.predictor import predict_fraud
 
-Base.metadata.create_all(bind=engine)
+import logging
 
-app = FastAPI(title="Fraud Prediction API")
+from fastapi import FastAPI
+
+from src.core.logging_config import setup_logging
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
+
+logger.info("SecurePay logging system initialized")
 
 
+app = FastAPI()
+
+
+app.include_router(test_audit_log)
 app.include_router(refresh_token_auth)
 app.include_router(login_router)
 app.include_router(logout_router)

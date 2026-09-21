@@ -302,8 +302,8 @@ def make_payment(
         if constraint_name != "uq_payment_idempotency_user_key":
             raise
 
-        print("IDEMPOTENCY FAILURE")
-        print(e)
+        # print("IDEMPOTENCY FAILURE")
+        # print(e)
 
         # -----------------------------------------------------
         # Fetch the winner's idempotency record
