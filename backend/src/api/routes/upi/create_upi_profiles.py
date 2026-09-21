@@ -12,10 +12,10 @@ from src.schemas.upi_profile import UPIProfileCreate
 
 from src.databases.models import User
 
-router = APIRouter(tags=["upi_profiles"])
+router = APIRouter(tags=["UPI"], prefix="/upi")
 
 
-@router.post("/upi/create-profile")
+@router.post("/create-profile")
 def create_profile(
     profile: UPIProfileCreate,
     db: Session = Depends(get_db),

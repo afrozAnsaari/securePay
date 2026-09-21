@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
@@ -7,9 +7,12 @@ from src.databases.refresh_token import RefreshToken
 from src.schemas.auth import LogoutRequest
 from src.security.hash_utils import sha256_hash
 
+from src.core.audit_events import AuditEvent
+from src.services.audit_service import create_audit_log
+
 router = APIRouter(
     prefix="/auth",
-    tags=["Authentication"],
+    tags=["Auth"],
 )
 
 
@@ -23,6 +26,7 @@ router = APIRouter(
 )
 def logout(
     request: LogoutRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
 ):
     token_hash = sha256_hash(request.refresh_token)
@@ -47,9 +51,27 @@ def logout(
             detail="Refresh token already revoked.",
         )
 
-    stored_token.revoked = True
+    try:
+        stored_token.revoked = True
 
-    db.commit()
+        create_audit_log(
+            db=db,
+            event_type=AuditEvent.USER_LOGOUT,
+            user_id=stored_token.user_id,
+            resource_type="User",
+            resource_id=str(stored_token.user_id),
+            ip_address=(http_request.client.host if http_request.client else None),
+            user_agent=http_request.headers.get("user-agent"),
+            metadata={
+                "method": "refresh_token",
+            },
+        )
+
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        raise
 
     return {
         "message": "Logged out successfully.",

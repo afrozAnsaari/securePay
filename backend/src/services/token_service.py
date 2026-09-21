@@ -33,6 +33,6 @@ def create_user_refresh_token(
 
     db.add(refresh_token)
 
-    db.commit()
+    db.flush()
 
     return raw_token

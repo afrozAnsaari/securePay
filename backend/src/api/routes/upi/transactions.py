@@ -19,7 +19,7 @@ from src.schemas.transaction_history import (
 
 router = APIRouter(
     prefix="/upi",
-    tags=["Transactions"],
+    tags=["UPI"],
 )
 
 

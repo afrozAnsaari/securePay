@@ -9,11 +9,11 @@ from src.auth.verify_user import get_current_user
 from src.schemas.account import LinkedAccountsResponse
 from src.services.account_service import get_linked_accounts
 
-router = APIRouter(tags=["upi_payments"])
+router = APIRouter(tags=["UPI"], prefix="/upi")
 
 
 @router.get(
-    "/upi/accounts/linked",
+    "/accounts/linked",
     response_model=LinkedAccountsResponse,
 )
 def get_user_linked_accounts(

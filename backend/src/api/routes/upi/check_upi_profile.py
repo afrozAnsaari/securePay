@@ -11,10 +11,10 @@ from src.databases.models import User, UPIProfile
 
 from src.schemas.upi import UPIProfileRespnse
 
-router = APIRouter(tags=["upi_profiles"])
+router = APIRouter(tags=["UPI"], prefix="/upi")
 
 
-@router.get("/upi/get-profile", response_model=UPIProfileRespnse)
+@router.get("/get-profile", response_model=UPIProfileRespnse)
 def get_upi_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

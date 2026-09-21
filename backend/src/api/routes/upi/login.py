@@ -23,7 +23,11 @@ from src.security.password import verify_password
 
 from src.auth.jwt import create_access_token
 
-router = APIRouter(tags=["Auth"])
+from src.core.audit_events import AuditEvent
+
+from src.services.audit_service import create_audit_log
+
+router = APIRouter(tags=["Auth"], prefix="/auth")
 
 
 @router.post(
@@ -37,7 +41,6 @@ def login(
     request: Request,
     db: Session = Depends(get_db),
 ):
-
     client_ip = request.client.host if request.client else "unknown"
 
     check_rate_limit(
@@ -51,7 +54,7 @@ def login(
     if user is None:
         raise HTTPException(
             status_code=401,
-            detail="Invalid mobile or passwords. Please try again",
+            detail="Invalid mobile or password.",
         )
 
     valid_password = verify_password(
@@ -65,16 +68,32 @@ def login(
             detail="Incorrect mobile number or password",
         )
 
-    access_token = create_access_token(
-        {
-            "user_id": user.id,
-        }
-    )
+    try:
+        access_token = create_access_token({"user_id": user.id})
 
-    refresh_token = create_user_refresh_token(
-        db=db,
-        user_id=user.id,
-    )
+        refresh_token = create_user_refresh_token(
+            db=db,
+            user_id=user.id,
+        )
+
+        create_audit_log(
+            db=db,
+            event_type=AuditEvent.USER_LOGIN,
+            user_id=user.id,
+            resource_type="User",
+            resource_id=str(user.id),
+            ip_address=client_ip,
+            user_agent=request.headers.get("user-agent"),
+            metadata={
+                "method": "password",
+            },
+        )
+
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        raise
 
     return {
         "access_token": access_token,

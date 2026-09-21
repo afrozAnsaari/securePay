@@ -38,11 +38,11 @@ from src.services.idempotency_service import (
     store_idempotency_result,
 )
 
-router = APIRouter(tags=["Payments"])
+router = APIRouter(tags=["UPI"], prefix="/upi")
 
 
 @router.post(
-    "/upi/pay",
+    "/pay",
     response_model=PaymentResponse,
     responses={
         400: {

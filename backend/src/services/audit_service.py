@@ -1,6 +1,5 @@
 from typing import Any
 
-
 from sqlalchemy.orm import Session
 
 from src.databases.audit_log import AuditLog
@@ -28,7 +27,6 @@ def create_audit_log(
     )
 
     db.add(audit_log)
-
     db.flush()
 
     return audit_log
