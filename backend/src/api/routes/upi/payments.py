@@ -17,11 +17,20 @@ from src.databases.models import (
     Payment,
 )
 
+from src.exceptions.payments_exceptions import InvalidUPIPinError
+from src.exceptions.fraud_payment import FraudPaymentDetectedError
+
 from src.services.rate_limit_service import check_rate_limit
 
 from src.config.rate_limits import RATE_LIMITS
 
 from src.databases.payment_idempotency import PaymentIdempotency
+
+
+from src.security.security_audit_service import create_security_audit_log
+from src.core.audit_events import AuditEvent
+from src.services.audit_service import create_audit_log
+
 
 from src.schemas.payment import (
     PaymentCreate,
@@ -47,6 +56,9 @@ router = APIRouter(tags=["UPI"], prefix="/upi")
     responses={
         400: {
             "description": "Invalid Idempotency-Key",
+        },
+        403: {
+            "description": "Invalid UPI PIN",
         },
         409: {
             "description": "Idempotency conflict or payment already processing",
@@ -395,7 +407,7 @@ def make_payment(
     #
     # This request owns this idempotency key.
     # =========================================================
-
+    saved_payment = None
     try:
 
         # =====================================================
@@ -430,6 +442,20 @@ def make_payment(
         # - debit ledger
         # - credit ledger
         # =====================================================
+
+        create_audit_log(
+            db=db,
+            event_type=AuditEvent.PAYMENT_COMPLETED,
+            user_id=current_user.id,
+            resource_type="Payment",
+            resource_id=str(saved_payment.transaction_id),
+            metadata={
+                "amount": saved_payment.amount,
+                "transaction_type": saved_payment.transaction_type,
+                "status": saved_payment.status,
+                "receiver": payment.receiver,
+            },
+        )
 
         db.commit()
 
@@ -474,6 +500,48 @@ def make_payment(
         # =====================================================
 
         return response
+
+    except FraudPaymentDetectedError as exc:
+
+        db.rollback()
+
+        create_security_audit_log(
+            event_type=AuditEvent.FRAUD_DETECTED,
+            user_id=current_user.id,
+            resource_type="PaymentAttempt",
+            resource_id=str(payment.sender_account_id),
+            metadata={
+                "reason": "FRAUD_DETECTED",
+                "amount": payment.amount,
+                "sender_account_id": payment.sender_account_id,
+                "risk_score": exc.risk_score,
+                "fraud_decision": "DECLINED",
+            },
+        )
+
+        raise HTTPException(
+            status_code=403,
+            detail="You transaction has been rejected due to some issues. Please try again later.",
+        )
+
+    except InvalidUPIPinError:
+
+        db.rollback()
+
+        create_security_audit_log(
+            event_type=AuditEvent.UPI_PIN_FAILED,
+            user_id=current_user.id,
+            resource_type="UPIProfile",
+            resource_id=str(payment.sender_upi_profile_id),
+            metadata={
+                "reason": "INVALID_UPI_PIN",
+            },
+        )
+
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid UPI PIN",
+        )
 
     except Exception:
 

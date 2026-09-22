@@ -17,6 +17,8 @@ from src.schemas.fraud_prediction import FraudPrediction
 from src.services.input_validator import resolve_receiver
 from src.services.fraud_service import predict_transaction
 
+from src.exceptions.fraud_payment import FraudPaymentDetectedError
+
 from src.utils.enums.FraudDecision import FraudDecision
 from src.utils.enums.PaymentStatus import PaymentStatus
 
@@ -25,7 +27,7 @@ def process_payment_transaction(
     db,
     payment_data: PaymentCreate,
     current_user: User,
-):
+) -> Payment:
 
     if payment_data.amount <= 0:
 
@@ -175,14 +177,7 @@ def process_payment_transaction(
 
     if fraud_decision == FraudDecision.DECLINED.value:
 
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "Your transaction has been declined "
-                "due to being in the risk zone. "
-                "Please try again later."
-            ),
-        )
+        raise FraudPaymentDetectedError(risk_score=fraud_prediction.risk_score)
 
     # =========================================================
     # 10. Transfer Funds

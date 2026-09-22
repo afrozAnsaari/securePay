@@ -42,10 +42,13 @@ def predict_transaction(
     df = preprocess_transaction(features)
 
     try:
+
         probability: float = float(MODEL.predict_proba(df)[0][1])
     except Exception as e:
+
         raise RuntimeError("Fraud prediction failed.") from e
 
+    # Omit this part temporarily to check whether the Fraud Detection model is working properly
     if 0.00 <= probability <= 0.40:
         decision = FraudDecision.APPROVED.value
     elif 0.40 < probability < THRESHOLD:
@@ -55,6 +58,8 @@ def predict_transaction(
     else:
         raise RuntimeError("Invalid values returned by the model.")
 
+    # Un-Omit this to check whether this part of the payment pipeline is working or not.
+    # decision = FraudDecision.DECLINED.value
     return FraudPrediction(
         risk_score=probability,
         decision=decision,
