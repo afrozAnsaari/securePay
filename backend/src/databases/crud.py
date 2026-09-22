@@ -486,7 +486,7 @@ def link_bank_acc(
 
     db.add(linked_account)
 
-    db.commit()
+    db.flush()
 
     db.refresh(linked_account)
 
