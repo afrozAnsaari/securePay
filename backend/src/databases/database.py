@@ -13,7 +13,7 @@ if DATABASE_URL:
     engine = create_engine(DATABASE_URL)
 else:
     print("DB env variables not found\n")
-
+    exit()
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 Base = declarative_base()

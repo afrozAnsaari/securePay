@@ -35,6 +35,7 @@ def get_upi_profile(
 
     return UPIProfileRespnse(
         exists=True,
+        id=profile.id,
         upi_id=profile.upi_id,
         upi_pin_exists=profile.upi_pin_hash is not None,
     )
