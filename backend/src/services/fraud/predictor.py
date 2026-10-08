@@ -9,24 +9,15 @@ from src.data.preprocess import preprocess_transaction
 
 # print(NEW_BASE_DIR)
 
-BASE_DIR = Path(__file__).resolve().parents[4]
+BASE_DIR = Path(__file__).resolve().parents[3]
 
 # print(BASE_DIR)
 
-model = joblib.load(BASE_DIR / "models" / "paysim" / "xgboost_paysim_model.joblib")
+model = joblib.load(
+    BASE_DIR / "src" / "models" / "paysim" / "xgboost_paysim_model.joblib"
+)
 
-with open(BASE_DIR / "models" / "paysim" / "config.json") as f:
-    config = json.load(f)
-
-
-THRESHOLD = config["threshold"]
-
-
-model = joblib.load(BASE_DIR / "models" / "paysim" / "xgboost_paysim_model.joblib")
-# print(model.feature_names_in_)
-
-with open(BASE_DIR / "models/paysim/config.json") as f:
-
+with open(BASE_DIR / "src" / "models" / "paysim" / "config.json") as f:
     config = json.load(f)
 
 
@@ -57,4 +48,4 @@ def predict_fraud(transaction):
 
 
 # if __name__ == "__main__":
-    # print(BASE_DIR)
+# print(BASE_DIR)

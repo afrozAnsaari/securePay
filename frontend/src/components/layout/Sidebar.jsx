@@ -1,7 +1,8 @@
 import { useAuth } from "../../context/useAuth";
 
-export function Sidebar({ currentRoute, onNavigate }) {
+export function Sidebar({ currentRoute, onNavigate, onSignOut }) {
   const { user, upiProfile, logout } = useAuth();
+  const handleSignOut = onSignOut || logout;
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊" },
@@ -49,7 +50,7 @@ export function Sidebar({ currentRoute, onNavigate }) {
 
         <button
           type="button"
-          onClick={logout}
+          onClick={handleSignOut}
           style={{
             background: "transparent",
             border: "1px solid rgba(255, 255, 255, 0.1)",

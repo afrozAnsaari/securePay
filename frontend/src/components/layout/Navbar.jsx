@@ -1,8 +1,9 @@
 import { useAuth } from "../../context/useAuth";
 import { Button } from "../common/Button";
 
-export function Navbar({ title, onNavigate }) {
+export function Navbar({ title, onNavigate, onSignOut }) {
   const { upiProfile, logout } = useAuth();
+  const handleSignOut = onSignOut || logout;
 
   return (
     <header className="topbar">
@@ -49,7 +50,7 @@ export function Navbar({ title, onNavigate }) {
         <Button
           variant="secondary"
           size="sm"
-          onClick={logout}
+          onClick={handleSignOut}
           title="Sign out of SecurePay"
         >
           Sign Out

@@ -8,6 +8,7 @@ import {
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { Alert } from "../components/common/Feedback";
+import { PasswordToggle } from "../components/common/PasswordToggle";
 
 export function Register({ onNavigate }) {
   const { register, login } = useAuth();
@@ -15,6 +16,7 @@ export function Register({ onNavigate }) {
   const [mobileNo, setMobileNo] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -159,7 +161,7 @@ export function Register({ onNavigate }) {
 
           <Input
             label="Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="At least 6 characters"
             value={password}
             onChange={(e) => {
@@ -167,6 +169,12 @@ export function Register({ onNavigate }) {
               if (errors.password) setErrors((prev) => ({ ...prev, password: null }));
             }}
             error={errors.password}
+            rightElement={
+              <PasswordToggle
+                isVisible={showPassword}
+                onToggle={() => setShowPassword((prev) => !prev)}
+              />
+            }
           />
 
           <div style={{ marginTop: "24px" }}>

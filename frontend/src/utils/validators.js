@@ -33,8 +33,8 @@ export function validatePassword(password) {
   if (!password || typeof password !== "string") {
     return "Password is required.";
   }
-  if (password.length < 6) {
-    return "Password must be at least 6 characters long.";
+  if (password.length < 4 || password.length > 6) {
+    return "Password must be at least 4-6 characters long.";
   }
   return null;
 }

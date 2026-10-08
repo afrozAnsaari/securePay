@@ -4,11 +4,13 @@ import { validateMobile, validatePassword } from "../utils/validators";
 import { Input } from "../components/common/Input";
 import { Button } from "../components/common/Button";
 import { Alert } from "../components/common/Feedback";
+import { PasswordToggle } from "../components/common/PasswordToggle";
 
 export function Login({ onNavigate }) {
   const { login } = useAuth();
   const [mobileNo, setMobileNo] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -112,7 +114,7 @@ export function Login({ onNavigate }) {
 
           <Input
             label="Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={password}
             onChange={(e) => {
@@ -120,6 +122,12 @@ export function Login({ onNavigate }) {
               if (errors.password) setErrors((prev) => ({ ...prev, password: null }));
             }}
             error={errors.password}
+            rightElement={
+              <PasswordToggle
+                isVisible={showPassword}
+                onToggle={() => setShowPassword((prev) => !prev)}
+              />
+            }
           />
 
           <div style={{ marginTop: "24px" }}>

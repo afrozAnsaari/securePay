@@ -14,12 +14,14 @@ from src.services.features import build_transaction_features
 
 from src.schemas.fraud_prediction import FraudPrediction
 
-BASE_DIR = Path(__file__).resolve().parents[3]
+BASE_DIR = Path(__file__).resolve().parents[2]
 # print(BASE_DIR)
 
-MODEL = joblib.load(BASE_DIR / "models" / "paysim" / "xgboost_paysim_model.joblib")
+MODEL = joblib.load(
+    BASE_DIR / "src" / "models" / "paysim" / "xgboost_paysim_model.joblib"
+)
 
-with open(BASE_DIR / "models" / "paysim" / "config.json") as f:
+with open(BASE_DIR / "src" / "models" / "paysim" / "config.json") as f:
     CONFIG = json.load(f)
 
 THRESHOLD = CONFIG["threshold"]

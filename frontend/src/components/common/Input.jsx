@@ -7,6 +7,7 @@ export function Input({
   id,
   className = "",
   rightElement,
+  style,
   ...props
 }) {
   const generatedId = useId();
@@ -23,6 +24,10 @@ export function Input({
         <input
           id={inputId}
           className={`form-input ${error ? "error" : ""} ${className}`.trim()}
+          style={{
+            ...(rightElement ? { paddingRight: "42px" } : {}),
+            ...(style || {}),
+          }}
           {...props}
         />
         {rightElement && (
