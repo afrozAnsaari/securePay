@@ -47,6 +47,9 @@ from src.services.idempotency_service import (
     store_idempotency_result,
 )
 
+
+from src.services.reference_generator import generate_test_transaction_reference
+
 router = APIRouter(tags=["UPI"], prefix="/upi")
 
 

@@ -1,5 +1,3 @@
-import uuid
-
 from datetime import datetime, date, timezone
 
 from sqlalchemy import (
@@ -13,6 +11,7 @@ from sqlalchemy import (
     Date,
     Text,
     Enum as SQLEnum,
+    UniqueConstraint,
 )
 
 from src.utils.enums.BankName import BankName
@@ -189,11 +188,16 @@ class Payment(Base):
     )
 
     transaction_id = Column(
-        String(36),
+        String(10),
         unique=True,
         nullable=False,
-        index=True,
-        default=lambda: str(uuid.uuid4()),
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "transaction_id",
+            name="uq_payments_transaction_id",
+        ),
     )
 
 

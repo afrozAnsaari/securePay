@@ -1,5 +1,8 @@
 from fastapi import HTTPException
 
+from sqlalchemy.exc import IntegrityError
+
+
 from src.databases.models import (
     Account,
     LedgerEntry,
@@ -21,6 +24,14 @@ from src.exceptions.fraud_payment import FraudPaymentDetectedError
 
 from src.utils.enums.FraudDecision import FraudDecision
 from src.utils.enums.PaymentStatus import PaymentStatus
+
+from src.services.reference_generator import (
+    generate_test_transaction_reference,
+    generate_transaction_reference,
+    MAX_TRANSACTION_REFERENCE_ATTEMPTS,
+)
+
+from src.exceptions.payments_exceptions import TransactionReferenceGenerationError
 
 
 def process_payment_transaction(
@@ -159,7 +170,7 @@ def process_payment_transaction(
 
         raise HTTPException(
             status_code=400,
-            detail=("Insufficient Balance. " "Transaction Denied"),
+            detail=("Insufficient Balance. Transaction Denied"),
         )
 
     # =========================================================
@@ -190,40 +201,133 @@ def process_payment_transaction(
     # =========================================================
     # 11. Create Payment
     # =========================================================
+    # =========================================================
+    # 11. Create Payment
+    # =========================================================
 
-    payment = Payment(
-        sender_upi_profile_id=sender_profile.id,
-        receiver_upi_profile_id=receiver_profile.id,
-        sender_account_id=sender_acc.id,
-        receiver_account_id=receiver_acc.id,
-        amount=payment_data.amount,
-        transaction_type="P2P",
-        status=PaymentStatus.SUCCESS.value,
-        risk_score=fraud_prediction.risk_score,
-        fraud_decision=fraud_decision,
-    )
+    # Test implementation
 
-    db.add(payment)
+    # =========================================================
+    # 11. Create Payment
+    # =========================================================
 
-    db.flush()
+    payment: Payment | None = None
+
+    for attempt in range(MAX_TRANSACTION_REFERENCE_ATTEMPTS):
+
+        transaction_id = generate_transaction_reference()
+
+        print(f"[TEST] Payment attempt {attempt + 1}: {transaction_id}")
+
+        try:
+            with db.begin_nested():
+
+                payment = Payment(
+                    transaction_id=transaction_id,
+                    sender_upi_profile_id=sender_profile.id,
+                    receiver_upi_profile_id=receiver_profile.id,
+                    sender_account_id=sender_acc.id,
+                    receiver_account_id=receiver_acc.id,
+                    amount=payment_data.amount,
+                    transaction_type="P2P",
+                    status=PaymentStatus.SUCCESS.value,
+                    risk_score=fraud_prediction.risk_score,
+                    fraud_decision=fraud_prediction.decision,
+                )
+
+                db.add(payment)
+
+                db.flush()
+
+            print(f"[TEST] Reference accepted: {transaction_id}")
+
+            break
+
+        except IntegrityError as exc:
+
+            constraint_name = getattr(
+                getattr(exc.orig, "diag", None),
+                "constraint_name",
+                None,
+            )
+
+            print(f"[TEST] IntegrityError: {constraint_name}")
+
+            if constraint_name != "uq_payments_transaction_id":
+                raise
+
+            print(f"[TEST] Collision: {transaction_id}")
+
+            if attempt == MAX_TRANSACTION_REFERENCE_ATTEMPTS - 1:
+                raise TransactionReferenceGenerationError(
+                    f"Unable to generate a unique transaction reference after {MAX_TRANSACTION_REFERENCE_ATTEMPTS} attempts."
+                )
+
+    if payment is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to create payment.",
+        )
+
+    # Actual prod implementation
+    # payment: Payment | None = None
+
+    # for attempt in range(MAX_TRANSACTION_REFERENCE_ATTEMPTS):
+
+    #     transaction_id = generate_test_transaction_reference()
+
+    #     try:
+    #         with db.begin_nested():
+
+    #             payment = Payment(
+    #                 transaction_id=transaction_id,
+    #                 sender_upi_profile_id=sender_profile.id,
+    #                 receiver_upi_profile_id=receiver_profile.id,
+    #                 sender_account_id=sender_acc.id,
+    #                 receiver_account_id=receiver_acc.id,
+    #                 amount=payment_data.amount,
+    #                 transaction_type="P2P",
+    #                 status=PaymentStatus.SUCCESS.value,
+    #                 risk_score=fraud_prediction.risk_score,
+    #                 fraud_decision=fraud_prediction.decision,
+    #             )
+
+    #             db.add(payment)
+    #             db.flush()
+
+    #         # Payment was successfully inserted.
+    #         break
+
+    #     except IntegrityError as exc:
+
+    #         if "uq_payments_transaction_id" not in str(exc.orig):
+    #             raise
+
+    #         if attempt == MAX_TRANSACTION_REFERENCE_ATTEMPTS - 1:
+    #             raise HTTPException(
+    #                 status_code=500,
+    #                 detail=(
+    #                     "Unable to complete this transaction. Please try again later."
+    #                 ),
+    #             )
 
     # =========================================================
     # 12. Ledger Entries
     # =========================================================
+    if payment is not None:
+        debit = LedgerEntry(
+            payment_id=payment.id,
+            account_id=sender_acc.id,
+            entry_type="DEBIT",
+            amount=payment.amount,
+        )
 
-    debit = LedgerEntry(
-        payment_id=payment.id,
-        account_id=sender_acc.id,
-        entry_type="DEBIT",
-        amount=payment.amount,
-    )
-
-    credit = LedgerEntry(
-        payment_id=payment.id,
-        account_id=receiver_acc.id,
-        entry_type="CREDIT",
-        amount=payment.amount,
-    )
+        credit = LedgerEntry(
+            payment_id=payment.id,
+            account_id=receiver_acc.id,
+            entry_type="CREDIT",
+            amount=payment.amount,
+        )
 
     db.add_all(
         [
