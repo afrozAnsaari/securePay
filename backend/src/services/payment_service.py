@@ -215,9 +215,9 @@ def process_payment_transaction(
 
     for attempt in range(MAX_TRANSACTION_REFERENCE_ATTEMPTS):
 
-        transaction_id = generate_test_transaction_reference()
+        transaction_id = generate_transaction_reference()
 
-        print(f"[TEST] Payment attempt {attempt + 1}: {transaction_id}")
+        # print(f"[TEST] Payment attempt {attempt + 1}: {transaction_id}")
 
         try:
             with db.begin_nested():
@@ -240,7 +240,7 @@ def process_payment_transaction(
                 db.flush()
 
             payment = candidate_payment
-            print(f"[TEST] Reference accepted: {transaction_id}")
+            # print(f"[TEST] Reference accepted: {transaction_id}")
 
             break
 
@@ -252,12 +252,12 @@ def process_payment_transaction(
                 None,
             )
 
-            print(f"[TEST] IntegrityError: {constraint_name}")
+            # print(f"[TEST] IntegrityError: {constraint_name}")
 
             if constraint_name != "uq_payments_transaction_id":
                 raise
 
-            print(f"[TEST] Collision: {transaction_id}")
+            # print(f"[TEST] Collision: {transaction_id}")
 
             if attempt == MAX_TRANSACTION_REFERENCE_ATTEMPTS - 1:
                 raise TransactionReferenceGenerationError(
