@@ -48,7 +48,7 @@ from src.services.idempotency_service import (
 )
 
 
-from src.services.reference_generator import generate_test_transaction_reference
+from src.exceptions.payments_exceptions import TransactionReferenceGenerationError
 
 router = APIRouter(tags=["UPI"], prefix="/upi")
 
@@ -526,7 +526,6 @@ def make_payment(
             status_code=403,
             detail="You transaction has been rejected due to some issues. Please try again later.",
         )
-
     except InvalidUPIPinError:
 
         db.rollback()
@@ -545,7 +544,14 @@ def make_payment(
             status_code=403,
             detail="Invalid UPI PIN",
         )
+    except TransactionReferenceGenerationError as exc:
 
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to complete this transaction. Please try again later.",
+        )
     except Exception:
 
         # =====================================================

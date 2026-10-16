@@ -9,6 +9,7 @@ import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { Alert } from "../common/Feedback";
+import { PasswordToggle } from "../common/PasswordToggle";
 
 export function LinkAccountModal({ isOpen, onClose, onAccountLinked }) {
   const [bankName, setBankName] = useState("HDFC");
@@ -16,6 +17,7 @@ export function LinkAccountModal({ isOpen, onClose, onAccountLinked }) {
   const [expiryMonth, setExpiryMonth] = useState("");
   const [expiryYear, setExpiryYear] = useState("");
   const [cardPin, setCardPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,6 +28,7 @@ export function LinkAccountModal({ isOpen, onClose, onAccountLinked }) {
     setExpiryMonth("");
     setExpiryYear("");
     setCardPin("");
+    setShowPin(false);
     setErrors({});
     setApiError("");
   };
@@ -159,7 +162,7 @@ export function LinkAccountModal({ isOpen, onClose, onAccountLinked }) {
 
         <Input
           label="ATM PIN (4-6 digits)"
-          type="password"
+          type={showPin ? "text" : "password"}
           maxLength={6}
           placeholder="••••"
           value={cardPin}
@@ -169,6 +172,12 @@ export function LinkAccountModal({ isOpen, onClose, onAccountLinked }) {
           }}
           error={errors.cardPin}
           hint="Used by NPCI to securely verify account ownership"
+          rightElement={
+            <PasswordToggle
+              isVisible={showPin}
+              onToggle={() => setShowPin((prev) => !prev)}
+            />
+          }
         />
 
         <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>

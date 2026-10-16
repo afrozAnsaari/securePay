@@ -12,6 +12,7 @@ from sqlalchemy import (
     Text,
     Enum as SQLEnum,
     UniqueConstraint,
+    CheckConstraint,
 )
 
 from src.utils.enums.BankName import BankName
@@ -188,7 +189,7 @@ class Payment(Base):
     )
 
     transaction_id = Column(
-        String(10),
+        String(12),
         unique=True,
         nullable=False,
     )
@@ -197,6 +198,10 @@ class Payment(Base):
         UniqueConstraint(
             "transaction_id",
             name="uq_payments_transaction_id",
+        ),
+        CheckConstraint(
+            "LENGTH(transaction_id) = 12",
+            name="chk_transaction_id_length",
         ),
     )
 

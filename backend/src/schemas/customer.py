@@ -1,6 +1,5 @@
 import re
 
-
 from datetime import date
 
 from pydantic import BaseModel, EmailStr, field_validator
@@ -41,7 +40,7 @@ class CustomerCreate(BaseModel):
 
         return value
 
-    @field_validator("pan_no")
+    @field_validator("aadhar_no")
     @classmethod
     def validate_aadhar_no(cls, value: str):
         if not value.isdigit() and len(value) == 12:

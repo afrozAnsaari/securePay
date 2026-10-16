@@ -6,12 +6,15 @@ import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { Alert } from "../common/Feedback";
+import { PasswordToggle } from "../common/PasswordToggle";
 
 export function CreateUPIProfileModal({ isOpen, onClose, onProfileCreated }) {
   const { refreshUPIProfile } = useAuth();
   const [upiId, setUpiId] = useState("");
   const [upiPin, setUpiPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
+  const [showConfirmPin, setShowConfirmPin] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -114,21 +117,33 @@ export function CreateUPIProfileModal({ isOpen, onClose, onProfileCreated }) {
 
         <Input
           label="Set UPI PIN (4-6 digits)"
-          type="password"
+          type={showPin ? "text" : "password"}
           maxLength={6}
           placeholder="••••"
           value={upiPin}
           onChange={(e) => setUpiPin(e.target.value.replace(/\D/g, ""))}
           hint="Used to authorize all future transfers & balance checks"
+          rightElement={
+            <PasswordToggle
+              isVisible={showPin}
+              onToggle={() => setShowPin((prev) => !prev)}
+            />
+          }
         />
 
         <Input
           label="Confirm UPI PIN"
-          type="password"
+          type={showConfirmPin ? "text" : "password"}
           maxLength={6}
           placeholder="••••"
           value={confirmPin}
           onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
+          rightElement={
+            <PasswordToggle
+              isVisible={showConfirmPin}
+              onToggle={() => setShowConfirmPin((prev) => !prev)}
+            />
+          }
         />
 
         <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>

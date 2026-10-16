@@ -22,7 +22,9 @@ from src.api.routes.bank.card_issuance import router as card_issuance_router
 
 from src.api.routes.upi.login import router as login_router
 from src.api.routes.upi.logout import router as logout_router
-from src.api.routes.upi.get_linked_accounts import router as get_all_user_linked_accounts
+from src.api.routes.upi.get_linked_accounts import (
+    router as get_all_user_linked_accounts,
+)
 from src.api.routes.upi.create_upi_profiles import router as UPI_Route
 from src.api.routes.upi.fetch_accounts import router as discover_accounts
 from src.api.routes.upi.link_bank_account import router as link_bank_router
@@ -59,6 +61,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from fastapi.responses import JSONResponse
+from src.exceptions.payments_exceptions import TransactionReferenceGenerationError
+
+
+@app.exception_handler(TransactionReferenceGenerationError)
+async def transaction_reference_exception_handler(
+    request, exc: TransactionReferenceGenerationError
+):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Unable to complete this transaction. Please try again later."
+        },
+    )
 
 
 # app.include_router(test_audit_log)

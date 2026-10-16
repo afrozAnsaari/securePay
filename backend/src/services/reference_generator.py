@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from src.databases.models import Payment
 
-TRANSACTION_REFERENCE_LENGTH = 10
+TRANSACTION_REFERENCE_LENGTH = 12
 MAX_TRANSACTION_REFERENCE_ATTEMPTS = 3
 
 MIN_TRANSACTION_REFERENCE = 10 ** (TRANSACTION_REFERENCE_LENGTH - 1)
@@ -28,9 +28,10 @@ def generate_transaction_reference() -> str:
 # REMOVE/COMMENT AFTER TESTING
 # =========================================================
 _test_references = [
-    "5831047291",
-    "5831047291",
-    "8174026395",
+    "583104729101",
+    "583104729101",
+    "583104729101",
+    "817402639501",
 ]
 
 
@@ -40,10 +41,7 @@ _test_reference_index = 0
 def generate_test_transaction_reference() -> str:
     global _test_reference_index
 
-    if _test_reference_index >= len(_test_references):
-        raise RuntimeError("Test transaction reference sequence exhausted")
-
-    reference = _test_references[_test_reference_index]
+    reference = _test_references[_test_reference_index % len(_test_references)]
 
     print(f"[TEST] Generated reference {_test_reference_index + 1}: {reference}")
 
