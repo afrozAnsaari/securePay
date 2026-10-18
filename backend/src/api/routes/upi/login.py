@@ -5,11 +5,11 @@ from fastapi import (
     Request,
 )
 
-from src.services.rate_limit_service import check_rate_limit
+from src.services.redis.rate_limit_service import check_rate_limit
 from src.config.rate_limits import RATE_LIMITS
 
 
-from src.services.token_service import create_user_refresh_token
+from src.services.auth.token_service import create_user_refresh_token
 
 from sqlalchemy.orm import Session
 
@@ -25,7 +25,7 @@ from src.auth.jwt import create_access_token
 
 from src.core.audit_events import AuditEvent
 
-from src.services.audit_service import create_audit_log
+from src.services.audit.audit_service import create_audit_log
 
 router = APIRouter(tags=["Auth"], prefix="/auth")
 

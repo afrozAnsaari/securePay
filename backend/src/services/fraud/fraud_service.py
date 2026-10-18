@@ -10,11 +10,11 @@ from src.databases.models import Account
 
 from src.data.preprocess import preprocess_transaction
 
-from src.services.features import build_transaction_features
+from src.services.fraud.features import build_transaction_features
 
 from src.schemas.fraud_prediction import FraudPrediction
 
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(__file__).resolve().parents[3]
 # print(BASE_DIR)
 
 MODEL = joblib.load(

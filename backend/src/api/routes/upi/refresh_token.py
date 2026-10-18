@@ -13,7 +13,7 @@ from src.auth.jwt import create_access_token
 
 from src.security.hash_utils import sha256_hash
 
-from src.services.rate_limit_service import check_rate_limit
+from src.services.redis.rate_limit_service import check_rate_limit
 
 from src.config.rate_limits import RATE_LIMITS
 

@@ -8,7 +8,7 @@ from src.schemas.auth import LogoutRequest
 from src.security.hash_utils import sha256_hash
 
 from src.core.audit_events import AuditEvent
-from src.services.audit_service import create_audit_log
+from src.services.audit.audit_service import create_audit_log
 
 router = APIRouter(
     prefix="/auth",

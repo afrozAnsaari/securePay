@@ -7,7 +7,7 @@ from src.databases.database import get_db
 from src.auth.verify_user import get_current_user
 
 from src.schemas.account import LinkedAccountsResponse
-from src.services.account_service import get_linked_accounts
+from src.services.account.account_service import get_linked_accounts
 
 router = APIRouter(tags=["UPI"], prefix="/upi")
 

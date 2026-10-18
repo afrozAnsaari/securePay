@@ -17,15 +17,15 @@ from src.auth.verify_payment_pin import verify_upi_pin
 from src.schemas.payment import PaymentCreate
 from src.schemas.fraud_prediction import FraudPrediction
 
-from src.services.input_validator import resolve_receiver
-from src.services.fraud_service import predict_transaction
+from src.services.payment.input_validator import resolve_receiver
+from src.services.fraud.fraud_service import predict_transaction
 
 from src.exceptions.fraud_payment import FraudPaymentDetectedError
 
 from src.utils.enums.FraudDecision import FraudDecision
 from src.utils.enums.PaymentStatus import PaymentStatus
 
-from src.services.reference_generator import (
+from src.services.payment.reference_generator import (
     generate_test_transaction_reference,
     generate_transaction_reference,
     MAX_TRANSACTION_REFERENCE_ATTEMPTS,
