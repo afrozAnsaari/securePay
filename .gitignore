@@ -24,4 +24,6 @@ __pycache__/
 .venv/
 venv/
 
+
+docs/
 db_backup/
