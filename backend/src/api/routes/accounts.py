@@ -17,7 +17,7 @@ from src.databases.models import (
 from src.auth.verify_payment_pin import verify_upi_pin
 from src.auth.verify_user import get_current_user
 
-from src.services.account_service import get_linked_account
+from src.services.account.account_service import get_linked_account
 
 router = APIRouter(tags=["Accounts"])
 

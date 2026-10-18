@@ -20,7 +20,7 @@ from src.databases.models import (
 from src.exceptions.payments_exceptions import InvalidUPIPinError
 from src.exceptions.fraud_payment import FraudPaymentDetectedError
 
-from src.services.rate_limit_service import check_rate_limit
+from src.services.redis.rate_limit_service import check_rate_limit
 
 from src.config.rate_limits import RATE_LIMITS
 
@@ -29,7 +29,7 @@ from src.databases.payment_idempotency import PaymentIdempotency
 
 from src.security.security_audit_service import create_security_audit_log
 from src.core.audit_events import AuditEvent
-from src.services.audit_service import create_audit_log
+from src.services.audit.audit_service import create_audit_log
 
 
 from src.schemas.payment import (
@@ -37,11 +37,11 @@ from src.schemas.payment import (
     PaymentResponse,
 )
 
-from src.services.payment_service import (
+from src.services.payment.payment_service import (
     process_payment_transaction,
 )
 
-from src.services.idempotency_service import (
+from src.services.redis.idempotency_service import (
     generate_request_fingerprint,
     get_idempotency_record,
     store_idempotency_result,
