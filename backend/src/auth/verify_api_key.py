@@ -12,8 +12,8 @@ from fastapi.security import (
 from sqlalchemy.orm import Session
 
 
-from   src.databases.database import get_db
-from   src.databases.models import Merchant
+from src.databases.postgres.database import get_db
+from src.databases.postgres.models import Merchant
 
 security = HTTPBearer()
 

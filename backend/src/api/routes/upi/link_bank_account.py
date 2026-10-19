@@ -9,11 +9,11 @@ from src.services.audit.audit_service import create_audit_log
 
 from src.auth.verify_user import get_current_user
 
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
-from src.databases.crud import link_bank_acc
+from src.databases.postgres.crud import link_bank_acc
 
-from src.databases.models import User
+from src.databases.postgres.models import User
 
 
 from src.services.redis.rate_limit_service import check_rate_limit

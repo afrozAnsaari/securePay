@@ -10,9 +10,9 @@ from sqlalchemy.orm import Session
 
 from src.auth.verify_user import get_current_user
 
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
-from src.databases.models import (
+from src.databases.postgres.models import (
     User,
     Payment,
 )
@@ -24,7 +24,7 @@ from src.services.redis.rate_limit_service import check_rate_limit
 
 from src.config.rate_limits import RATE_LIMITS
 
-from src.databases.payment_idempotency import PaymentIdempotency
+from src.databases.postgres.models.payment_idempotency import PaymentIdempotency
 
 
 from src.security.security_audit_service import create_security_audit_log
@@ -453,7 +453,7 @@ def make_payment(
             resource_type="Payment",
             resource_id=str(saved_payment.transaction_id),
             metadata={
-                "amount": saved_payment.amount,
+                "amount": str(saved_payment.amount),
                 "transaction_type": saved_payment.transaction_type,
                 "status": saved_payment.status,
                 "receiver": payment.receiver,

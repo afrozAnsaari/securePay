@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from src.databases.models import (
+from src.databases.postgres.models import (
     LinkedBankAccount,
     Account,
 )

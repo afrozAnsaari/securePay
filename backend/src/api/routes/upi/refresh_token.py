@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from src.databases.refresh_token import RefreshToken
-from src.databases.database import get_db
+from src.databases.postgres.models.refresh_token import RefreshToken
+from src.databases.postgres.database import get_db
 
 from src.schemas.refresh_token import RefreshTokenRequest
 

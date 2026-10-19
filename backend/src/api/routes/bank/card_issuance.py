@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 
 from src.schemas.card import CardCreate
 
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
-from src.databases.crud import create_card
+from src.databases.postgres.crud import create_card
 
 router = APIRouter(tags=["Issue Cards"])
 

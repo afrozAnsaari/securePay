@@ -13,9 +13,9 @@ from src.services.auth.token_service import create_user_refresh_token
 
 from sqlalchemy.orm import Session
 
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
-from src.databases.models import User
+from src.databases.postgres.models import User
 
 from src.schemas.auth import LoginRequest
 

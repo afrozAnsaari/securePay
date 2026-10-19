@@ -7,9 +7,9 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from src.schemas.pin import BalanceRequest
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
-from src.databases.models import (
+from src.databases.postgres.models import (
     User,
     UPIProfile,
 )

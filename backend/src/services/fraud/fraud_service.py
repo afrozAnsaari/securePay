@@ -6,7 +6,7 @@ from pathlib import Path
 
 from src.utils.enums.FraudDecision import FraudDecision
 
-from src.databases.models import Account
+from src.databases.postgres.models import Account
 
 from src.data.preprocess import preprocess_transaction
 
@@ -27,10 +27,13 @@ with open(BASE_DIR / "src" / "models" / "paysim" / "config.json") as f:
 THRESHOLD = CONFIG["threshold"]
 
 
+from decimal import Decimal
+
+
 def predict_transaction(
     sender_account: Account,
     receiver_account: Account,
-    amount: float,
+    amount: Decimal | float,
     transaction_type: str = "P2P",
 ) -> FraudPrediction:
 

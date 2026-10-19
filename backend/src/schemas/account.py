@@ -1,3 +1,4 @@
+from decimal import Decimal
 import re
 
 from pydantic import BaseModel, field_validator, Field
@@ -12,13 +13,9 @@ MOBILE_NO_REGEX = re.compile(r"^\d{10}$")
 class AccountCreate(BaseModel):
 
     customer_id: int
-
     bank_name: BankName
-
     account_type: AccountType
-
-    initial_balance: float = Field(gt=0)
-
+    initial_balance: Decimal = Field(gt=Decimal("0.00"))
     mobile_no: str
 
     @field_validator("mobile_no")

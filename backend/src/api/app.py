@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from src.databases.database import engine
-from src.databases.models import Base
+from src.databases.postgres.database import engine
+from src.databases.postgres.models import Base
 
 from src.schemas.transaction import Transaction
 

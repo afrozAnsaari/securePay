@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from sqlalchemy.orm import Session
 
-from src.databases.refresh_token import RefreshToken
+from src.databases.postgres.models import RefreshToken
 
 from src.auth.jwt import create_refresh_token, REFRESH_TOKEN_EXPIRY_IN_DAYS
 

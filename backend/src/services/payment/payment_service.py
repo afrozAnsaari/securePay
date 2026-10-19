@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 
 
-from src.databases.models import (
+from src.databases.postgres.models import (
     Account,
     LedgerEntry,
     Payment,
@@ -78,7 +78,7 @@ def process_payment_transaction(
     )
 
     # =========================================================
-    # 3. Get + LOCK Sender Account
+    # 3. Get Sender Account (Read-only pre-check, no lock)
     # =========================================================
 
     sender_acc = (
@@ -91,7 +91,6 @@ def process_payment_transaction(
             LinkedBankAccount.user_id == current_user.id,
             LinkedBankAccount.account_id == payment_data.sender_account_id,
         )
-        .with_for_update()
         .first()
     )
 
@@ -103,17 +102,13 @@ def process_payment_transaction(
         )
 
     # =========================================================
-    # 4. Resolve Receiver
+    # 4. Resolve Receiver & Primary Account (Read-only, no lock)
     # =========================================================
 
     receiver_profile = resolve_receiver(
         db,
         payment_data.receiver,
     )
-
-    # =========================================================
-    # 5. Get Receiver Primary Linked Account
-    # =========================================================
 
     receiver_linked_acc = (
         db.query(LinkedBankAccount)
@@ -131,16 +126,11 @@ def process_payment_transaction(
             detail=("Receiver cannot accept any payments right now."),
         )
 
-    # =========================================================
-    # 6. LOCK Receiver Account
-    # =========================================================
-
     receiver_acc = (
         db.query(Account)
         .filter(
             Account.id == receiver_linked_acc.account_id,
         )
-        .with_for_update()
         .first()
     )
 
@@ -152,7 +142,7 @@ def process_payment_transaction(
         )
 
     # =========================================================
-    # 7. Same Account Check
+    # 5. Same Account Check
     # =========================================================
 
     if sender_acc.id == receiver_acc.id:
@@ -163,7 +153,7 @@ def process_payment_transaction(
         )
 
     # =========================================================
-    # 8. Balance Check
+    # 6. Preliminary Balance Check (Fail-fast before ML inference)
     # =========================================================
 
     if sender_acc.balance < payment_data.amount:
@@ -174,7 +164,11 @@ def process_payment_transaction(
         )
 
     # =========================================================
-    # 9. Fraud Detection
+    # 7. Fraud Detection ML Inference
+    #
+    # Executed BEFORE acquiring database row locks.
+    # This prevents DB connection pool exhaustion and avoids
+    # holding locks during CPU-bound model computation.
     # =========================================================
 
     fraud_prediction: FraudPrediction = predict_transaction(
@@ -191,7 +185,42 @@ def process_payment_transaction(
         raise FraudPaymentDetectedError(risk_score=fraud_prediction.risk_score)
 
     # =========================================================
-    # 10. Transfer Funds
+    # 8. Acquire Pessimistic Row Locks (with_for_update)
+    #
+    # Locks are acquired in deterministic order (sorted by account ID)
+    # to eliminate deadlocks between concurrent bidirectional transfers.
+    # =========================================================
+
+    first_acc_id, second_acc_id = sorted([sender_acc.id, receiver_acc.id])
+
+    db.query(Account).filter(Account.id == first_acc_id).with_for_update().first()
+    db.query(Account).filter(Account.id == second_acc_id).with_for_update().first()
+
+    # Re-fetch both accounts now under lock to ensure fresh state
+    sender_acc = (
+        db.query(Account)
+        .filter(Account.id == payment_data.sender_account_id)
+        .first()
+    )
+    receiver_acc = (
+        db.query(Account)
+        .filter(Account.id == receiver_linked_acc.account_id)
+        .first()
+    )
+
+    # =========================================================
+    # 9. Strict In-Lock Balance Re-Verification
+    # =========================================================
+
+    if sender_acc.balance < payment_data.amount:
+
+        raise HTTPException(
+            status_code=400,
+            detail=("Insufficient Balance. Transaction Denied"),
+        )
+
+    # =========================================================
+    # 10. Transfer Funds Under Lock
     # =========================================================
 
     sender_acc.balance -= payment_data.amount

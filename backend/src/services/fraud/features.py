@@ -30,17 +30,21 @@ def encode_transaction_type(transaction_type: str) -> dict[str, int]:
 def build_transaction_features(
     sender_account,
     receiver_account,
-    amount: float,
+    amount,
     transaction_type: str,
 ) -> dict:
 
+    sender_balance = float(sender_account.balance)
+    receiver_balance = float(receiver_account.balance)
+    float_amount = float(amount)
+
     features = {
         "step": datetime.now(timezone.utc).hour,
-        "amount": amount,
-        "oldbalanceOrg": sender_account.balance,
-        "newbalanceOrig": sender_account.balance - amount,
-        "oldbalanceDest": receiver_account.balance,
-        "newbalanceDest": receiver_account.balance + amount,
+        "amount": float_amount,
+        "oldbalanceOrg": sender_balance,
+        "newbalanceOrig": sender_balance - float_amount,
+        "oldbalanceDest": receiver_balance,
+        "newbalanceDest": receiver_balance + float_amount,
     }
 
     features["origBalanceDiff"] = features["oldbalanceOrg"] - features["newbalanceOrig"]
