@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.databases.database import SessionLocal
+from src.databases.postgres.database import SessionLocal
 from src.core.audit_events import AuditEvent
 from src.services.audit.audit_service import create_audit_log
 

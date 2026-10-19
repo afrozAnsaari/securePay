@@ -1,11 +1,8 @@
 from fastapi import HTTPException
 
 from src.security.password import verify_password
-from src.databases.models import UPIProfile
-
 from src.exceptions.payments_exceptions import InvalidUPIPinError
-
-from src.databases.models import User
+from src.databases.postgres.models import UPIProfile, User
 
 
 def verify_upi_pin(

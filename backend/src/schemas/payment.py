@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
@@ -22,9 +23,10 @@ class PaymentCreate(BaseModel):
         description="Linked Bank Account used to fund payment",
     )
 
-    amount: int = Field(
+    amount: Decimal = Field(
         ...,
         description="Amount to be transferred",
+        gt=Decimal("0.00"),
     )
 
     upi_pin: str = Field(
@@ -42,20 +44,20 @@ class PaymentCreate(BaseModel):
 
     @field_validator("amount")
     @classmethod
-    def validate_amount(cls, value: int):
+    def validate_amount(cls, value: Decimal):
 
         if value <= 0:
             raise ValueError("Amount should be greater than zero")
-        return value
+        return value.quantize(Decimal("0.01"))
 
 
 class PaymentResponse(BaseModel):
     transaction_id: str
-    amount: float
+    amount: Decimal
     status: str
     receiver: str
     transaction_type: str
     created_at: datetime
     message: str
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)

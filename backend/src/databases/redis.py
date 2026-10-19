@@ -1,9 +1,6 @@
-import redis
+from src.databases.redis.connection import REDIS_URL, redis_client
 
-REDIS_URL = "redis://localhost:6379/0"
-
-
-redis_client = redis.Redis.from_url(
-    REDIS_URL,
-    decode_responses=True,
-)
+__all__ = [
+    "REDIS_URL",
+    "redis_client",
+]

@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 
 from sqlalchemy.orm import Session
 
-from src.databases.crud import fetch_accounts
+from src.databases.postgres.crud import fetch_accounts
 
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
 from src.schemas.discover_acccount_req import DiscoverAccountsRequest
 

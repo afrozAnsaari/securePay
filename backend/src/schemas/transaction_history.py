@@ -1,11 +1,12 @@
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
 
 class TransactionResponse(BaseModel):
     transaction_id: str
-    amount: float
+    amount: Decimal
     status: str
     transaction_type: str
 

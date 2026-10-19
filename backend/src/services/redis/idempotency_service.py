@@ -28,7 +28,7 @@ def generate_request_fingerprint(
     payload = {
         "receiver": receiver.strip().lower(),
         "sender_account_id": sender_account_id,
-        "amount": amount,
+        "amount": str(amount),
     }
 
     serialized = json.dumps(
@@ -88,7 +88,7 @@ def store_idempotency_result(
 
         redis_client.set(
             redis_key,
-            json.dumps(record),
+            json.dumps(record, default=str),
             ex=IDEMPOTENCY_TTL,
         )
 

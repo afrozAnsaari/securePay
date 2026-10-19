@@ -4,9 +4,9 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, aliased
 
 from src.auth.verify_user import get_current_user
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
-from src.databases.models import (
+from src.databases.postgres.models import (
     User,
     Payment,
     UPIProfile,

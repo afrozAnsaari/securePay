@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 from sqlalchemy.orm import Session
 
-from src.databases.models import Payment
+from src.databases.postgres.models import Payment
 
 TRANSACTION_REFERENCE_LENGTH = 12
 MAX_TRANSACTION_REFERENCE_ATTEMPTS = 3

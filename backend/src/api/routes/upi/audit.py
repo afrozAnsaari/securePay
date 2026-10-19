@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from src.auth.verify_user import get_current_user
-from src.databases.database import get_db
-from src.databases.models import User
+from src.databases.postgres.database import get_db
+from src.databases.postgres.models import User
 from src.services.audit.audit_service import create_audit_log
 
 logger = logging.getLogger(__name__)

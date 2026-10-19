@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
-from src.databases.database import get_db
-from src.databases.refresh_token import RefreshToken
+from src.databases.postgres.database import get_db
+from src.databases.postgres.models.refresh_token import RefreshToken
 from src.schemas.auth import LogoutRequest
 from src.security.hash_utils import sha256_hash
 

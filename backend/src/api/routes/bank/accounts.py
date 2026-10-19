@@ -6,11 +6,11 @@ from fastapi import (
 
 from sqlalchemy.orm import Session
 
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
 from src.schemas.account import AccountCreate
 
-from src.databases.crud import create_account
+from src.databases.postgres.crud import create_account
 
 router = APIRouter(
     prefix="/bank",

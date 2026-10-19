@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 
 from src.auth.verify_user import get_current_user
 
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
-from src.databases.models import User, UPIProfile
+from src.databases.postgres.models import User, UPIProfile
 
 
 from src.schemas.upi import UPIProfileRespnse

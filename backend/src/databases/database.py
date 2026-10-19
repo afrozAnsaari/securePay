@@ -1,28 +1,15 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from src.databases.postgres.database import (
+    DATABASE_URL,
+    Base,
+    SessionLocal,
+    engine,
+    get_db,
+)
 
-from dotenv import load_dotenv
-
-import os
-
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if DATABASE_URL:
-    engine = create_engine(DATABASE_URL)
-else:
-    print("DB env variables not found\n")
-    exit()
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-
-Base = declarative_base()
-
-
-def get_db():
-    db = SessionLocal()
-
-    try:
-        yield db
-    finally:
-        db.close()
+__all__ = [
+    "DATABASE_URL",
+    "engine",
+    "SessionLocal",
+    "Base",
+    "get_db",
+]

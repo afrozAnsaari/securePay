@@ -3,7 +3,7 @@ import re
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from src.databases.models import UPIProfile, User
+from src.databases.postgres.models import UPIProfile, User
 
 # --------------------------------------------------
 # Phone number

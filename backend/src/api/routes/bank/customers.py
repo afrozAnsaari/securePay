@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends
 
 from sqlalchemy.orm import Session
 
-from src.databases.database import get_db
+from src.databases.postgres.database import get_db
 
 from src.schemas.customer import CustomerCreate
 
-from src.databases.crud import create_customer
+from src.databases.postgres.crud import create_customer
 
 router = APIRouter(
     prefix="/bank",
