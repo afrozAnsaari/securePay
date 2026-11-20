@@ -5,7 +5,6 @@ from src.databases.postgres.models.account import Account
 from src.databases.postgres.models.customer import Customer
 from src.databases.postgres.models.user import User
 from src.schemas.account import AccountCreate
-from src.schemas.discover_acccount_req import DiscoverAccountsRequest
 from src.utils.bank_utils import generate_account_number, get_ifsc_code
 
 
@@ -43,17 +42,9 @@ def create_account(db: Session, account_data: AccountCreate) -> Account:
     return account
 
 
-def fetch_accounts(db: Session, request: DiscoverAccountsRequest):
-    user = db.query(User).filter(User.id == request.user_id).first()
-
-    if user is None:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found",
-        )
-
+def fetch_accounts(db: Session, current_user: User):
     customer = (
-        db.query(Customer).filter(Customer.mobile_no == request.mobile_no).first()
+        db.query(Customer).filter(Customer.mobile_no == current_user.mobile_no).first()
     )
 
     if customer is None:

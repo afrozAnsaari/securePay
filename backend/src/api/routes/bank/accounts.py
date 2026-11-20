@@ -6,6 +6,8 @@ from fastapi import (
 
 from sqlalchemy.orm import Session
 
+from src.auth.verify_admin import require_admin
+
 from src.databases.postgres.database import get_db
 
 from src.schemas.account import AccountCreate
@@ -14,7 +16,8 @@ from src.databases.postgres.crud import create_account
 
 router = APIRouter(
     prefix="/bank",
-    tags=["Bank Accounts"],
+    tags=["Bank Accounts (admin)"],
+    dependencies=[Depends(require_admin)],
 )
 
 

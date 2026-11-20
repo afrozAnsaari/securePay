@@ -1,14 +1,8 @@
-import os
-
 from cryptography.fernet import Fernet
 
-from dotenv import load_dotenv
+from src.config import settings
 
-load_dotenv()
-
-# print(os.getenv("ENCRYPTION_KEY"))
-
-cipher = Fernet(os.getenv("ENCRYPTION_KEY").encode())
+cipher = Fernet(settings.ENCRYPTION_KEY.encode())
 
 
 def encrypt_data(data: str) -> str:
@@ -16,5 +10,4 @@ def encrypt_data(data: str) -> str:
 
 
 def decrypt_data(data: str) -> str:
-
     return cipher.decrypt(data.encode()).decode()

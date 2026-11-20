@@ -12,8 +12,11 @@ RATE_LIMITS = {
         "window": 60,
     },
     "payment": {
-        # This is temporary change: limit 10->3
-        "limit": 3,
+        "limit": 10,
+        "window": 60,
+    },
+    "balance": {
+        "limit": 10,
         "window": 60,
     },
     "accounts": {
@@ -25,8 +28,7 @@ RATE_LIMITS = {
         "window": 60,
     },
     "lba": {
-        # Changed temporarily for testing 30->5
-        "limit": 5,
+        "limit": 30,
         "window": 60,
     },
 }

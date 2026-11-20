@@ -1,3 +1,4 @@
 {
-    "threshold": 0.9
+    "threshold": 0.9,
+    "review_threshold": 0.4
 }

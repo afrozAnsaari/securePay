@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends
 
+from src.auth.verify_admin import require_admin
+
 from sqlalchemy.orm import Session
 
 from src.databases.postgres.database import get_db
@@ -10,7 +12,8 @@ from src.databases.postgres.crud import create_customer
 
 router = APIRouter(
     prefix="/bank",
-    tags=["Bank Customers"],
+    tags=["Bank Customers (admin)"],
+    dependencies=[Depends(require_admin)],
 )
 
 

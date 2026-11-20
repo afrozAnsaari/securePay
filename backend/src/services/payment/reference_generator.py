@@ -1,13 +1,5 @@
 import secrets
 
-
-from fastapi import HTTPException
-
-
-from sqlalchemy.orm import Session
-
-from src.databases.postgres.models import Payment
-
 TRANSACTION_REFERENCE_LENGTH = 12
 MAX_TRANSACTION_REFERENCE_ATTEMPTS = 3
 
@@ -17,56 +9,11 @@ MAX_TRANSACTION_REFERENCE = (10**TRANSACTION_REFERENCE_LENGTH) - 1
 
 
 def generate_transaction_reference() -> str:
+    """
+    Random 12-digit reference. Uniqueness is enforced by the database
+    (uq_payments_transaction_id); payment_service retries on collision.
+    """
     return str(
         secrets.randbelow(MAX_TRANSACTION_REFERENCE - MIN_TRANSACTION_REFERENCE + 1)
         + MIN_TRANSACTION_REFERENCE
-    )
-
-
-# =========================================================
-# TEMPORARY COLLISION TEST
-# REMOVE/COMMENT AFTER TESTING
-# =========================================================
-_test_references = [
-    "583104729101",
-    "583104729101",
-    "583104729101",
-    "817402639501",
-]
-
-
-_test_reference_index = 0
-
-
-def generate_test_transaction_reference() -> str:
-    global _test_reference_index
-
-    reference = _test_references[_test_reference_index % len(_test_references)]
-
-    print(f"[TEST] Generated reference {_test_reference_index + 1}: {reference}")
-
-    _test_reference_index += 1
-
-    return reference
-
-
-def generate_unique_transaction_reference(db: Session) -> str:
-    for _ in range(3):
-        transaction_id = generate_transaction_reference()
-
-        existing = (
-            db.query(Payment.id)
-            .filter(Payment.transaction_id == transaction_id)
-            .first()
-        )
-
-        if existing is None:
-            return transaction_id
-
-    raise HTTPException(
-        status_code=500,
-        detail=(
-            "Unable to generate a unique transaction reference. "
-            "Please try again later."
-        ),
     )

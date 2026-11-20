@@ -19,7 +19,7 @@ from src.databases.postgres.models import User
 
 from src.schemas.auth import LoginRequest
 
-from src.security.password import verify_password
+from src.security.password import hash_password, verify_password
 
 from src.auth.jwt import create_access_token
 
@@ -28,6 +28,10 @@ from src.core.audit_events import AuditEvent
 from src.services.audit.audit_service import create_audit_log
 
 router = APIRouter(tags=["Auth"], prefix="/auth")
+
+INVALID_LOGIN_MESSAGE = "Incorrect mobile number or password."
+
+DUMMY_PASSWORD_HASH = hash_password("securepay-timing-equaliser")
 
 
 @router.post(
@@ -51,21 +55,18 @@ def login(
 
     user = db.query(User).filter(User.mobile_no == credentials.mobile_no).first()
 
-    if user is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid mobile or password.",
-        )
-
+    # Always run one bcrypt check, even for unknown numbers, and return the
+    # same message either way. Otherwise the error text or response time
+    # reveals which mobile numbers are registered.
     valid_password = verify_password(
         credentials.password,
-        user.password_hash,
+        user.password_hash if user is not None else DUMMY_PASSWORD_HASH,
     )
 
-    if not valid_password:
+    if user is None or not valid_password:
         raise HTTPException(
             status_code=401,
-            detail="Incorrect mobile number or password",
+            detail=INVALID_LOGIN_MESSAGE,
         )
 
     try:

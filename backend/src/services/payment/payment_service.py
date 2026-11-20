@@ -1,3 +1,9 @@
+# What is the most complicated code you have written independently without AI or anyone else's assistance? 
+# Attach the question as multiline comment above your code and upload the file.
+# This payment validator and executor handles three different service such as : 
+# Redis Idempotency, User Auth and verification and also executes payments using a secure ACID-based payment procedure
+
+
 from fastapi import HTTPException
 
 from sqlalchemy.exc import IntegrityError
@@ -26,7 +32,6 @@ from src.utils.enums.FraudDecision import FraudDecision
 from src.utils.enums.PaymentStatus import PaymentStatus
 
 from src.services.payment.reference_generator import (
-    generate_test_transaction_reference,
     generate_transaction_reference,
     MAX_TRANSACTION_REFERENCE_ATTEMPTS,
 )
@@ -189,24 +194,29 @@ def process_payment_transaction(
     #
     # Locks are acquired in deterministic order (sorted by account ID)
     # to eliminate deadlocks between concurrent bidirectional transfers.
+    # (ORDER BY + FOR UPDATE: Postgres locks rows in the sorted order.)
+    #
+    # populate_existing() is essential: both Account objects were already
+    # loaded above (steps 3-4), and without it SQLAlchemy would hand back
+    # those cached objects with their OLD balances instead of the values
+    # the locked SELECT just read. Two concurrent payments could then both
+    # pass the balance check and overwrite each other (double spend).
     # =========================================================
 
-    first_acc_id, second_acc_id = sorted([sender_acc.id, receiver_acc.id])
+    locked_accounts = {
+        account.id: account
+        for account in (
+            db.query(Account)
+            .filter(Account.id.in_([sender_acc.id, receiver_acc.id]))
+            .order_by(Account.id)
+            .with_for_update()
+            .populate_existing()
+            .all()
+        )
+    }
 
-    db.query(Account).filter(Account.id == first_acc_id).with_for_update().first()
-    db.query(Account).filter(Account.id == second_acc_id).with_for_update().first()
-
-    # Re-fetch both accounts now under lock to ensure fresh state
-    sender_acc = (
-        db.query(Account)
-        .filter(Account.id == payment_data.sender_account_id)
-        .first()
-    )
-    receiver_acc = (
-        db.query(Account)
-        .filter(Account.id == receiver_linked_acc.account_id)
-        .first()
-    )
+    sender_acc = locked_accounts[sender_acc.id]
+    receiver_acc = locked_accounts[receiver_acc.id]
 
     # =========================================================
     # 9. Strict In-Lock Balance Re-Verification
@@ -230,23 +240,12 @@ def process_payment_transaction(
     # =========================================================
     # 11. Create Payment
     # =========================================================
-    # =========================================================
-    # 11. Create Payment
-    # =========================================================
-
-    # Test implementation
-
-    # =========================================================
-    # 11. Create Payment
-    # =========================================================
 
     payment: Payment | None = None
 
     for attempt in range(MAX_TRANSACTION_REFERENCE_ATTEMPTS):
 
         transaction_id = generate_transaction_reference()
-
-        # print(f"[TEST] Payment attempt {attempt + 1}: {transaction_id}")
 
         try:
             with db.begin_nested():
@@ -269,7 +268,6 @@ def process_payment_transaction(
                 db.flush()
 
             payment = candidate_payment
-            # print(f"[TEST] Reference accepted: {transaction_id}")
 
             break
 
@@ -281,12 +279,8 @@ def process_payment_transaction(
                 None,
             )
 
-            # print(f"[TEST] IntegrityError: {constraint_name}")
-
             if constraint_name != "uq_payments_transaction_id":
                 raise
-
-            # print(f"[TEST] Collision: {transaction_id}")
 
             if attempt == MAX_TRANSACTION_REFERENCE_ATTEMPTS - 1:
                 raise TransactionReferenceGenerationError(
@@ -302,20 +296,19 @@ def process_payment_transaction(
     # =========================================================
     # 12. Ledger Entries
     # =========================================================
-    if payment is not None:
-        debit = LedgerEntry(
-            payment_id=payment.id,
-            account_id=sender_acc.id,
-            entry_type="DEBIT",
-            amount=payment.amount,
-        )
+    debit = LedgerEntry(
+        payment_id=payment.id,
+        account_id=sender_acc.id,
+        entry_type="DEBIT",
+        amount=payment.amount,
+    )
 
-        credit = LedgerEntry(
-            payment_id=payment.id,
-            account_id=receiver_acc.id,
-            entry_type="CREDIT",
-            amount=payment.amount,
-        )
+    credit = LedgerEntry(
+        payment_id=payment.id,
+        account_id=receiver_acc.id,
+        entry_type="CREDIT",
+        amount=payment.amount,
+    )
 
     db.add_all(
         [

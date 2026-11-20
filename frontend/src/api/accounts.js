@@ -39,13 +39,9 @@ export const accountsApi = {
   },
 
   /**
-   * Discover bank accounts tied to a mobile number
+   * Discover bank accounts registered to the logged-in user's mobile number
    */
-  async discoverAccounts({ user_id, mobile_no }) {
-    return api.post(
-      "/discover-accounts",
-      { user_id, mobile_no },
-      { requiresAuth: false }
-    );
+  async discoverAccounts() {
+    return api.post("/discover-accounts");
   },
 };

@@ -6,7 +6,6 @@ import redis
 
 from src.databases.redis import redis_client
 
-REDIS_URL = "redis://localhost:6379/0"
 
 IDEMPOTENCY_TTL = 60 * 60 * 24
 

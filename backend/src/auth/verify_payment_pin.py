@@ -3,6 +3,12 @@ from fastapi import HTTPException
 from src.security.password import verify_password
 from src.exceptions.payments_exceptions import InvalidUPIPinError
 from src.databases.postgres.models import UPIProfile, User
+from src.services.redis.pin_lockout_service import (
+    MAX_PIN_ATTEMPTS,
+    clear_failures,
+    ensure_not_locked,
+    record_failure,
+)
 
 
 def verify_upi_pin(
@@ -15,11 +21,17 @@ def verify_upi_pin(
             detail="UPI PIN not set",
         )
 
+    # Refuse before checking the PIN, so a locked profile can't be guessed.
+    ensure_not_locked(profile.id)
+
     if not verify_password(
         entered_pin,
         profile.upi_pin_hash,
     ):
-        raise InvalidUPIPinError()
+        failures = record_failure(profile.id)
+        raise InvalidUPIPinError(attempts_left=max(MAX_PIN_ATTEMPTS - failures, 0))
+
+    clear_failures(profile.id)
 
 
 def verify_login_pin(

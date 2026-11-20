@@ -28,3 +28,7 @@ docs/
 db_backup/
 
 .virtual_documents/
+
+# Database dumps (may contain personal data)
+*.dump
+*.sql.gz

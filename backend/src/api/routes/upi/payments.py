@@ -17,7 +17,8 @@ from src.databases.postgres.models import (
     Payment,
 )
 
-from src.exceptions.payments_exceptions import InvalidUPIPinError
+from src.exceptions.payments_exceptions import InvalidUPIPinError, invalid_pin_message
+from src.utils.enums.FraudDecision import FraudDecision
 from src.exceptions.fraud_payment import FraudPaymentDetectedError
 
 from src.services.redis.rate_limit_service import check_rate_limit
@@ -317,9 +318,6 @@ def make_payment(
         if constraint_name != "uq_payment_idempotency_user_key":
             raise
 
-        # print("IDEMPOTENCY FAILURE")
-        # print(e)
-
         # -----------------------------------------------------
         # Fetch the winner's idempotency record
         # -----------------------------------------------------
@@ -446,6 +444,28 @@ def make_payment(
         # - credit ledger
         # =====================================================
 
+        # -----------------------------------------------------
+        # Medium-risk payments go through, but are recorded for
+        # manual review. The sender is not told, so a fraudster
+        # can't use the response to tune their attempts.
+        # -----------------------------------------------------
+
+        if saved_payment.fraud_decision == FraudDecision.REVIEW.value:
+
+            create_audit_log(
+                db=db,
+                event_type=AuditEvent.PAYMENT_FLAGGED_FOR_REVIEW,
+                user_id=current_user.id,
+                resource_type="Payment",
+                resource_id=str(saved_payment.transaction_id),
+                metadata={
+                    "amount": str(saved_payment.amount),
+                    "risk_score": saved_payment.risk_score,
+                    "sender_account_id": saved_payment.sender_account_id,
+                    "receiver_account_id": saved_payment.receiver_account_id,
+                },
+            )
+
         create_audit_log(
             db=db,
             event_type=AuditEvent.PAYMENT_COMPLETED,
@@ -524,9 +544,9 @@ def make_payment(
 
         raise HTTPException(
             status_code=403,
-            detail="You transaction has been rejected due to some issues. Please try again later.",
+            detail="Your transaction has been declined. Please try again later.",
         )
-    except InvalidUPIPinError:
+    except InvalidUPIPinError as exc:
 
         db.rollback()
 
@@ -537,12 +557,13 @@ def make_payment(
             resource_id=str(payment.sender_upi_profile_id),
             metadata={
                 "reason": "INVALID_UPI_PIN",
+                "attempts_left": exc.attempts_left,
             },
         )
 
         raise HTTPException(
             status_code=403,
-            detail="Invalid UPI PIN",
+            detail=invalid_pin_message(exc.attempts_left),
         )
     except TransactionReferenceGenerationError as exc:
 
