@@ -3,6 +3,12 @@ RATE_LIMITS = {
         "limit": 5,
         "window": 60,
     },
+    # Per mobile number, independent of IP, so faking X-Forwarded-For
+    # or rotating IPs can't be used to guess one account's password.
+    "login_account": {
+        "limit": 10,
+        "window": 900,
+    },
     "register": {
         "limit": 5,
         "window": 3600,

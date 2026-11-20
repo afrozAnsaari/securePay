@@ -53,6 +53,12 @@ def login(
         window=RATE_LIMITS["login"]["window"],
     )
 
+    check_rate_limit(
+        key=f"login:account:{credentials.mobile_no}",
+        limit=RATE_LIMITS["login_account"]["limit"],
+        window=RATE_LIMITS["login_account"]["window"],
+    )
+
     user = db.query(User).filter(User.mobile_no == credentials.mobile_no).first()
 
     # Always run one bcrypt check, even for unknown numbers, and return the

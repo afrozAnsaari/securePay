@@ -1,5 +1,7 @@
 .ipynb_checkpoints/
 *.joblib
+# The trained fraud model is needed to run the API (2.3 MB), so it is committed.
+!backend/src/models/paysim/xgboost_paysim_model.joblib
 data/raw/
 data/processed/
 data/external/

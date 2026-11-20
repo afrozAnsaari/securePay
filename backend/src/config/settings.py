@@ -36,8 +36,34 @@ def _int(name: str, default: int) -> int:
 
 _missing: list[str] = []
 
+def _clean_database_url(raw: str) -> str:
+    """
+    Accept what people typically paste: surrounding spaces/quotes, or the
+    whole `psql 'postgresql://...'` snippet that Neon/Render show.
+    """
+
+    value = raw.strip()
+    if value.lower().startswith("psql "):
+        value = value[5:].strip()
+    value = value.strip("'\"").strip()
+
+    if value and not value.startswith(("postgresql://", "postgres://", "postgresql+")):
+        raise RuntimeError(
+            "DATABASE_URL doesn't look like a Postgres connection string. "
+            f"It should start with 'postgresql://' but starts with {value[:12]!r} "
+            f"({len(value)} characters). Copy the bare connection string, "
+            "not a code snippet."
+        )
+
+    # SQLAlchemy only understands "postgresql://", not the short "postgres://".
+    if value.startswith("postgres://"):
+        value = "postgresql://" + value[len("postgres://"):]
+
+    return value
+
+
 # --- Databases -------------------------------------------------------------
-DATABASE_URL = _required("DATABASE_URL")
+DATABASE_URL = _clean_database_url(_required("DATABASE_URL"))
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # --- Auth ------------------------------------------------------------------
