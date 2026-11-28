@@ -112,6 +112,9 @@ export function validateReceiver(receiver) {
   if (!username) {
     return "UPI ID username cannot be empty.";
   }
+  if (username.length < 4) {
+    return "UPI ID must be at least 4 characters.";
+  }
   if (username.length > 16) {
     return "UPI ID username cannot be more than 16 characters.";
   }

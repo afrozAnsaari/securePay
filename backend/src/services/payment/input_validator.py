@@ -122,6 +122,13 @@ def resolve_receiver(
             detail="UPI ID cannot be empty.",
         )
 
+    if len(username) < 4:
+
+        raise HTTPException(
+            status_code=400,
+            detail="UPI ID must be at least 4 characters.",
+        )
+
     if len(username) > 16:
 
         raise HTTPException(

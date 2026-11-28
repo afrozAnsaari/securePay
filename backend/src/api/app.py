@@ -1,14 +1,17 @@
 import logging
+import re
+import time
+import uuid
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.config import settings
-from src.core.logging_config import setup_logging
+from src.core.logging_config import request_id_ctx, setup_logging
 from src.exceptions.payments_exceptions import TransactionReferenceGenerationError
 
-from src.api.routes import accounts, users
+from src.api.routes import accounts, health, users
 
 from src.api.routes.upi.login import router as login_router
 from src.api.routes.upi.logout import router as logout_router
@@ -36,7 +39,42 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
+
+# A client may send its own X-Request-ID (e.g. from a proxy); otherwise we
+# make one. Only short, safe values are accepted so nobody can inject text
+# into the logs.
+_REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    incoming = request.headers.get("X-Request-ID", "")
+    request_id = incoming if _REQUEST_ID_PATTERN.match(incoming) else uuid.uuid4().hex
+
+    token = request_id_ctx.set(request_id)
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+
+        response.headers["X-Request-ID"] = request_id
+
+        if not request.url.path.startswith("/health"):
+            logger.info(
+                "%s %s -> %s (%.1f ms)",
+                request.method,
+                request.url.path,
+                response.status_code,
+                (time.perf_counter() - started) * 1000,
+            )
+
+        return response
+    except Exception:
+        logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+        raise
+    finally:
+        request_id_ctx.reset(token)
 
 
 @app.exception_handler(TransactionReferenceGenerationError)
@@ -55,6 +93,7 @@ async def transaction_reference_exception_handler(
 # App (user-facing) routes: used by the React frontend.
 # ---------------------------------------------------------------
 
+app.include_router(health.router)
 app.include_router(users.router)
 app.include_router(login_router)
 app.include_router(logout_router)

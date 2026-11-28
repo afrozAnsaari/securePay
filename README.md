@@ -90,14 +90,18 @@ The project has three parts:
 ```
 securePay/
 ├── backend/
+│   ├── Dockerfile            # API image (multi-stage, non-root)
+│   ├── alembic.ini
+│   ├── migrations/           # Alembic database migrations
 │   ├── notebooks/            # EDA + model training (PaySim, credit-card)
 │   ├── reports/figures/      # Plots produced by the notebooks
 │   ├── scripts/              # init_db, seed_demo, anonymize_data, export_requirements
 │   ├── pyproject.toml        # Dependencies (uv) + uv.lock
 │   ├── requirements*.txt     # Same pins, for pip
+│   ├── tests/                # pytest (needs Postgres + Redis)
 │   └── src/
 │       ├── api/
-│       │   ├── app.py        # FastAPI app, CORS, router registration
+│       │   ├── app.py        # FastAPI app, CORS, request IDs, router registration
 │       │   └── routes/
 │       │       ├── bank/     # customers, accounts, card issuance
 │       │       └── upi/      # auth, profiles, linking, payments, history
@@ -126,12 +130,42 @@ securePay/
 │       ├── pages/            # Login, Register, Dashboard, Accounts,
 │       │                     # SendMoney, Transactions, TransactionDetails
 │       └── utils/            # validators, formatters, idempotency keys
+├── docker-compose.yml        # backend locally: db, redis, migrate, api
 ├── render.yaml               # Render Blueprint (backend + Redis)
 ```
 
 ---
 
 ## Getting started
+
+### Quick start with Docker
+
+The backend (Postgres, Redis, migrations, API) starts with one command.
+You need only Docker:
+
+```bash
+cp backend/.env.example backend/.env    # fill in ENCRYPTION_KEY, JWT_SECRET_KEY, ADMIN_API_KEY
+docker compose up --build
+```
+
+- API: http://localhost:8000 (docs at `/docs`)
+- Frontend: run it as usual (see [3. Frontend](#3-frontend)) at http://localhost:5173
+
+`DATABASE_URL` and `REDIS_URL` in `.env` are ignored here, because compose
+points the API at its own containers. For demo data, run
+`docker compose exec api python scripts/seed_demo.py`.
+`docker compose down -v` stops everything and deletes the database.
+
+What starts, in order:
+
+| Service   | What it does                                                         |
+|-----------|----------------------------------------------------------------------|
+| `db`      | Postgres 16 (also on `localhost:5433` for tests and psql)            |
+| `redis`   | Redis 7 (also on `localhost:6380`)                                   |
+| `migrate` | Runs `scripts/init_db.py` (Alembic migrations), then exits           |
+| `api`     | FastAPI in a non-root container; starts only after `migrate` succeeds |
+
+To run it without Docker, follow the steps below.
 
 ### Prerequisites
 
@@ -147,7 +181,7 @@ data from the `backend/` folder:
 
 ```bash
 createdb secure_pay
-python scripts/init_db.py      # creates every table from the models (safe to re-run)
+python scripts/init_db.py      # applies the Alembic migrations (safe to re-run)
 python scripts/seed_demo.py    # fake users, accounts, cards, UPI IDs and payments
 ```
 
@@ -204,8 +238,8 @@ Fill in `.env`. Each required value has a generator command next to it in
 
 \* Only required while `ENABLE_ADMIN_ROUTES` is `true`.
 
-The trained model `src/models/paysim/xgboost_paysim_model.joblib` is ignored by
-git (`*.joblib`). If you don't have it, regenerate it by running
+The trained model `src/models/paysim/xgboost_paysim_model.joblib` is committed
+to the repo (2.3 MB), and the API loads it when it starts. To retrain it, run
 `notebooks/paysim/02_xgboost_model.ipynb`.
 
 Start Redis, then run the API **from the `backend/` directory**, because the
@@ -226,6 +260,37 @@ pip files so they stay in sync:
 
 The API runs at http://127.0.0.1:8000, with interactive docs at
 http://127.0.0.1:8000/docs.
+
+**Health checks.** `GET /health/live` only says the process is running.
+`GET /health/ready` also checks Postgres and Redis, and returns 503 when
+either is down. Every response carries an `X-Request-ID` header, and the
+same ID appears on every log line for that request.
+
+**Database migrations (Alembic).** The schema lives in `migrations/versions/`.
+After changing a model:
+
+```bash
+alembic revision --autogenerate -m "describe the change"   # creates a migration; read it before committing
+python scripts/init_db.py                                  # applies it (same as: alembic upgrade head)
+```
+
+Databases created before migrations existed already have the tables, so
+`init_db.py` marks them as being at the first migration instead of creating
+the tables again.
+
+**Tests.** The tests use a real Postgres and Redis, because what they check
+(row locks, unique constraints, the Redis cache) only exists there. Start them
+with `docker compose up -d db redis`, then from `backend/`:
+
+```bash
+uv run pytest          # or: pytest (with the dev requirements installed)
+```
+
+They use their own `securepay_test` database and Redis DB 15, and wipe both
+between tests. Set `TEST_DATABASE_URL` / `TEST_REDIS_URL` to use other servers.
+Covered: concurrent double-spend, opposite-direction transfers (deadlock),
+idempotency replay from Redis and from Postgres, key reuse, fraud decision
+thresholds, a declined payment moving no money, and the health checks.
 
 ### 3. Frontend
 

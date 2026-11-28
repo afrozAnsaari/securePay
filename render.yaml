@@ -13,10 +13,15 @@ services:
     region: singapore          # keep the same region as the Neon database
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    # --proxy-headers: read the visitor's IP from Render's proxy headers
-    # instead of seeing every request as coming from the proxy itself.
-    startCommand: uvicorn src.api.app:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips '*'
-    healthCheckPath: /
+    # 1. scripts/init_db.py applies any new database migrations (a no-op
+    #    when there are none). It runs before the server starts, and the free
+    #    plan has a single instance, so two copies never migrate at once.
+    # 2. --proxy-headers: read the visitor's IP from Render's proxy headers
+    #    instead of seeing every request as coming from the proxy itself.
+    startCommand: python scripts/init_db.py && uvicorn src.api.app:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips '*' --no-access-log
+    # Checks Postgres and Redis, so Render only sends traffic to an
+    # instance that can actually serve it.
+    healthCheckPath: /health/ready
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
@@ -31,6 +36,8 @@ services:
         generateValue: true
       - key: ENABLE_ADMIN_ROUTES   # bank simulator routes are not exposed online
         value: "false"
+      - key: LOG_FORMAT            # one JSON object per log line
+        value: json
       - key: REDIS_URL
         fromService:
           type: keyvalue

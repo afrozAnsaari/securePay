@@ -55,6 +55,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     # via
     #   click
     #   ipython
+    #   pytest
 comm==0.2.3
     # via ipykernel
 contourpy==1.3.3 ; python_full_version < '3.12'
@@ -89,6 +90,8 @@ idna==3.18
     #   httpx
     #   jsonschema
     #   requests
+iniconfig==2.3.1
+    # via pytest
 ipykernel==7.4.0
     # via jupyterlab
 ipython==9.18.1
@@ -217,6 +220,7 @@ packaging==26.2
     #   jupyterlab-server
     #   matplotlib
     #   nbconvert
+    #   pytest
     #   streamlit
 pandas==3.0.5
     # via
@@ -238,6 +242,8 @@ platformdirs==4.14.8
     # via
     #   black
     #   jupyter-core
+pluggy==1.7.0
+    # via pytest
 prometheus-client==0.26.0
     # via jupyter-server
 prompt-toolkit==3.0.53
@@ -263,8 +269,10 @@ pygments==2.21.0
     #   ipython
     #   ipython-pygments-lexers
     #   nbconvert
+    #   pytest
 pyparsing==3.3.3
     # via matplotlib
+pytest==9.2.0
 python-dateutil==2.9.0.post0
     # via
     #   arrow

@@ -28,6 +28,12 @@ export function CreateUPIProfileModal({ isOpen, onClose, onProfileCreated }) {
       return;
     }
 
+    const username = trimmedId.replace(/@securepay$/, "");
+    if (username.length < 4 || username.length > 16) {
+      setError("UPI ID must be 4 to 16 characters.");
+      return;
+    }
+
     const pinErr = validateUpiPin(upiPin);
     if (pinErr) {
       setError(pinErr);
@@ -111,7 +117,7 @@ export function CreateUPIProfileModal({ isOpen, onClose, onProfileCreated }) {
             </span>
           </div>
           <span className="form-hint" style={{ marginTop: "4px" }}>
-            Letters, numbers, '.', and '_' allowed (max 16 characters)
+            Letters, numbers, '.', and '_' allowed (4 to 16 characters)
           </span>
         </div>
 

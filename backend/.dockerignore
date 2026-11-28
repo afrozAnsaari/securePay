@@ -1,0 +1,15 @@
+# Keep secrets, local junk and large dev-only files out of the image.
+.env
+.env.*
+.venv/
+venv/
+logs/
+notebooks/
+reports/
+tests/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+requirements-dev.txt
+*.dump
+*.sql.gz

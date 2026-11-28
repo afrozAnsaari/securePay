@@ -30,6 +30,12 @@ class UPIProfileCreate(BaseModel):
         if not username:
             raise ValueError("UPI ID cannot be empty.")
 
+        # Same 4-16 limit the payment code uses to look up a receiver
+        # (src/services/payment/input_validator.py), so every UPI ID that
+        # can be created can also receive money.
+        if len(username) < 4:
+            raise ValueError("UPI ID must be at least 4 characters.")
+
         if len(username) > 16:
             raise ValueError("UPI ID cannot be more than 16 characters.")
 

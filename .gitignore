@@ -34,3 +34,6 @@ db_backup/
 # Database dumps (may contain personal data)
 *.dump
 *.sql.gz
+
+# Test cache
+.pytest_cache/

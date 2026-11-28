@@ -1,0 +1,72 @@
+# Run the SecurePay backend (Postgres, Redis, migrations, API) with one command:
+#
+#   cp backend/.env.example backend/.env    # then fill in the secrets
+#   docker compose up --build
+#
+#   API:  http://localhost:8000   (docs at /docs, health at /health/ready)
+#
+# The frontend is not containerised: run it as usual with `npm run dev`
+# in frontend/ (http://localhost:5173), and in production it is on Vercel.
+#
+# Postgres and Redis are also published on localhost:5433 / localhost:6380
+# (unusual ports, so they don't clash with copies installed on your machine).
+# The backend tests use them:  cd backend && pytest
+#
+# Everything here is for local use. In production the database password
+# comes from the platform's secret store, not from this file.
+
+x-api-env: &api-env
+  DATABASE_URL: postgresql+psycopg2://securepay:securepay@db:5432/secure_pay
+  REDIS_URL: redis://redis:6379/0
+
+services:
+  db:
+    image: postgres:16-alpine@sha256:f2f98726820d0342055351c6e9d36e705f5bfffb3dd53ff556325114b08afb6d
+    environment:
+      POSTGRES_DB: secure_pay
+      POSTGRES_USER: securepay
+      POSTGRES_PASSWORD: securepay
+    ports: ["127.0.0.1:5433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U securepay -d secure_pay"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
+    ports: ["127.0.0.1:6380:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-off job: apply database migrations, then exit. The API only starts
+  # after this finishes successfully, so two API copies never race to
+  # change the schema.
+  migrate:
+    build: ./backend
+    image: securepay-api:local
+    env_file: backend/.env
+    environment: *api-env
+    command: ["python", "scripts/init_db.py"]
+    restart: "no"
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    image: securepay-api:local
+    env_file: backend/.env
+    environment:
+      <<: *api-env
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    ports: ["8000:8000"]
+    restart: unless-stopped
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+volumes:
+  pgdata: {}
